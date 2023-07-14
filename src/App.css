@@ -1,0 +1,54 @@
+body {
+  background: #fff no-repeat center center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+/* Additional styling */
+  
+body {
+  font-size: 18px;
+  font-family: "Vibur", sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;  
+  padding: 0;
+  margin: 0;
+  display: flex;
+}  
+
+root {
+  width: 100vw;
+  height: 100vh;
+}
+
+h1.neonTextNF, h2.neonTextNF {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+  
+h1.neonTextNF {
+    font-size: 9rem;
+}
+  
+h2.neonTextNF {
+    font-size: 1.8rem;
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  justify-content: center;
+}
+
+button.neonTextNF {
+  background: transparent;
+  border: 0;
+  font-family: 'neon';
+  font-size: 2em;
+  padding-top: 17vh;
+  cursor: pointer;
+}
