@@ -1,19 +1,25 @@
-import "./pokemonList.css"
-import axios from 'axios'
+import "./pokemonList.css";
+import axios from 'axios';
 import { apiUrl } from '../../App';
 import { useEffect, useState } from 'react'
 import { SearchBar } from '../searchBar/searchBar';
+import  { PopUpInfo, PopUpInfoPokemon } from '../popUpInfo/popUpInfo';
 
 export function PokemonList() {
+
     interface Pokemon {
         name: string;
         url: string;
         image: string;
-        types: string[];
+        typeNames: string[];
+        gameIndex: number;
+        pokemonData: any;
       }
+
       interface Type {
         name: string;
       }
+
     const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
@@ -21,19 +27,22 @@ export function PokemonList() {
     const [pokemonPerPage, setPokemonPerPage] = useState(10);
     const [filterType, setFilterType] = useState('');
     const [typeList, setTypeList] = useState<Type[]>([]);
+    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+    const [isPopUpInfoOpen, setIsPopUpInfoOpen] = useState(false);
+    
 
 
     const fetchPokemonList = async () => {
         try {
-            if (typeList)
+            if (!typeList.length)
             {
-                const typeResponse = await axios.get('https://pokeapi.co/api/v2/type/');
+                const typeResponse = await axios.get(apiUrl + 'type/');
                 const typeResults: Pokemon[] = typeResponse.data.results;
 
                 const typeDataPromises = typeResults.map(async (type) => {
                     const typeResponse = await axios.get(type.url);
                     const { name } = typeResponse.data;
-                    
+                
                     return { name } as Type;
                 })
 
@@ -44,23 +53,26 @@ export function PokemonList() {
             const response = await axios.get(apiUrl + `pokemon?limit=1010`);
             const results: Pokemon[] = response.data.results;
 
-            const pokemonDataPromises = results.map(async (pokemon) => {
+            const pokemonDataPromises = results.map(async (pokemon, index) => {
                 const pokemonResponse = await axios.get(pokemon.url);
                 const { name, sprites, types } = pokemonResponse.data;
+                const pokemonData = pokemonResponse.data;
                 const image = sprites.front_default;
+                const typeNames = types.map((array: any) => array.type.name);
+                const gameIndex = index + 1;
 
-                return { name, image, types } as Pokemon;
+                return { name, image, typeNames, gameIndex, pokemonData } as Pokemon;
             });
 
             const pokemonData = await Promise.all(pokemonDataPromises);
             setPokemonList(pokemonData);
 
             if (searchTerm) {
-                const filteredTotalCount = pokemonData.filter((pokemon) => pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).length;
+                const filteredTotalCount = pokemonData.filter((pokemon) => pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
                 const totalPages = Math.ceil(filteredTotalCount / pokemonPerPage);
                 setTotalPages(totalPages);
             } else {
-                const totalCount = pokemonData.length;
+                const totalCount = pokemonData.filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
                 const totalPages = Math.ceil(totalCount / pokemonPerPage);
                 setTotalPages(totalPages);
             }
@@ -68,6 +80,7 @@ export function PokemonList() {
             console.log(error);
         }
     };
+
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -83,21 +96,27 @@ export function PokemonList() {
         setPokemonPerPage(selectedPokemonPerPage);
     };
 
-    const handleFilterTypeChange = (
-        event: React.ChangeEvent<HTMLSelectElement>
-      ) => {
+    const handleFilterTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedFilterType = event.target.value;
         setFilterType(selectedFilterType);
     };
 
+    
+    const handleOpenPopUpInfo = (pokemon: Pokemon) => {
+        setSelectedPokemon(pokemon);
+        setIsPopUpInfoOpen(true);
+    };
+      
+    const handleClosePopUpInfo = () => {
+        setIsPopUpInfoOpen(false);
+    }; 
+
     const filteredPokemonList = searchTerm
     ? pokemonList.filter((pokemon) =>
         pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) =>
-        filterType === '' || pokemon.types.includes(filterType)
-    )
+        filterType === '' || pokemon.typeNames.includes(filterType))
     : pokemonList.filter((pokemon) =>
-        filterType === '' || pokemon.types.includes(filterType)
-    );
+        filterType === '' || pokemon.typeNames.includes(filterType));
 
     const startIndex = (currentPage - 1) * pokemonPerPage;
     const endIndex = startIndex + pokemonPerPage;
@@ -115,11 +134,14 @@ export function PokemonList() {
         if (currentPage !== 1) {
           setCurrentPage(1);
         }
-
-        const filteredTotalCount = filteredPokemonList.filter((pokemon) => filterType === '' || pokemon.types.includes(filterType)).length;
+        
+        const filteredTotalCount = pokemonList.filter((pokemon) =>
+        pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) => 
+        filterType === '' || pokemon.typeNames.includes(filterType)).length;
         const totalPages = Math.ceil(filteredTotalCount / pokemonPerPage);
         setTotalPages(totalPages);
-      }, [searchTerm, filterType, pokemonPerPage]);
+      }, [searchTerm, filterType, pokemonPerPage, pokemonList]);
+      
 
     return(
         <>
@@ -144,7 +166,7 @@ export function PokemonList() {
                   onChange={handleFilterTypeChange}
                 >
                   <option value="">Tous</option>
-                  {typeList.map((type) => (
+                  {typeList.filter((type) => type.name !== "unknown").map((type) => (
                     <option key={type.name} value={type.name}>
                       {type.name}
                     </option>
@@ -153,12 +175,13 @@ export function PokemonList() {
             </div>
             <div className="PokeList">
                 {currentPokemonList.map((pokemon) => (
-                    <li key={pokemon.name}>
+                    <li key={pokemon.name} onClick={() => handleOpenPopUpInfo(pokemon)}>
                         <img src={pokemon.image} alt={pokemon.name} />
-                        {pokemon.name}
+                        {pokemon.name}#{pokemon.gameIndex}
                     </li>
                 ))}
             </div>
+            {isPopUpInfoOpen && (<PopUpInfo selectedPokemon={selectedPokemon} onClosePopUpInfo={handleClosePopUpInfo} />)}
             <div className="Pagination">
                 {Array.from({ length: totalPages }, (_, index) => index + 1).map(
                 (page) => (
