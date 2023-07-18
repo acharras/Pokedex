@@ -102,13 +102,21 @@ const Text = styled.div`
     height: 30%;
     align-items: center;
     font-weight: bold;
-    font-size: 120%;
+    font-size: 80%;
+
+    @media (min-width:250px) {
+        font-size: 120%;
+    }
     
 `;
 
 const Index = styled.p`
     font-weight: lighter;
-    font-size: 100%;
+    font-size: 80%;
+
+    @media (min-width:250px) {
+        font-size: 100%;
+    }
 `;
 
 const Types = styled.div`
@@ -119,7 +127,11 @@ const Types = styled.div`
     height: 100%;
     align-items: center;
     font-weight: bolder;
-    font-size: 70%;
+    font-size: 50%;
+
+    @media (min-width:250px) {
+        font-size: 70%;
+    }
 `;
 
 const Type = styled.div<{ type : string }>`
@@ -193,6 +205,21 @@ const PokemonListContent = styled.div`
         justify-content: space-between;
         height: 80vh;
     }
+
+    &::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+      }
+      
+    &::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3); 
+        border-radius: 10px;
+    }
+      
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5); 
+    }
 `;
 
 const Footer = styled.div `
@@ -200,8 +227,12 @@ const Footer = styled.div `
     width: 100vw;
     height: 5vh;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: space-around;
     align-items: center;
+
+    @media (min-width:768px) {
+        justify-content: flex-end;
+    }
 `;
 
 const PaginationContent = styled.div`
@@ -210,9 +241,11 @@ const PaginationContent = styled.div`
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
+    font-size: 70%;
 
     @media (min-width:768px) {
         justify-content: center;
+        font-size: 100%;
     }
 `;
 
@@ -232,6 +265,14 @@ const PaginationButton = styled.button<{ isactive: string }>`
 const PokemonPerPage = styled.div `
     display:flex;
     flex-direction: row;
+    width: 40%;
+    font-size: 70%;
+    align-items: center;
+
+    @media (min-width:768px) {
+        justify-content: center;
+        font-size: 100%;
+    }
 `;
 
 const PopUpContainer = styled.div<{open: boolean}> `
@@ -362,14 +403,12 @@ export function PokemonList() {
                     1
                 </PaginationButton>
             );
-            if (currentPage > 3) {
+            if (currentPage > 2) {
                 buttons.push(
                     <span key="prevWaiter">
                         ...
                     </span>
                 );
-            };
-            if (currentPage > 2) {
                 buttons.push(
                     <PaginationButton key="prev" isactive={'false'} onClick={() => handlePageChange(currentPage - 1)}>
                         {`<`}
@@ -385,19 +424,19 @@ export function PokemonList() {
         )
         
         if (currentPage < totalPages) {
-            buttons.push(
-                <PaginationButton key="next" isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
-                    {`>`}
-                </PaginationButton>
-            );
-            if (currentPage < totalPages - 2) {
+            if (currentPage < totalPages - 1) {
+                buttons.push(
+                    <PaginationButton key="next" isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
+                        {`>`}
+                    </PaginationButton>
+                );
                 buttons.push(
                     <span key="nextWaiter">
                         ...
                     </span>
                 );
-            };
-            if (currentPage < totalPages - 1) {
+            }
+            if (currentPage < totalPages ) {
                 buttons.push(
                     <PaginationButton key="last" isactive={currentPage === totalPages ? 'true' : 'false'} onClick={() => handlePageChange(totalPages)}>
                         {totalPages}
@@ -475,7 +514,7 @@ export function PokemonList() {
             </PokemonListContent>
             <Footer>
                 <PaginationContent className="Pagination">
-                    <p>Page :</p>
+                    <p>Page:</p>
                     {renderPaginationButtons()}
                 </PaginationContent>
                 <PokemonPerPage>

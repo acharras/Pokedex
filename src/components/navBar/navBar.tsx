@@ -7,7 +7,7 @@ const NavBarContainer = styled.div`
     width: 100vw;
     height: 15vh;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     margin-right: 0;
     margin-bottom: 1vh;
 
@@ -32,7 +32,7 @@ const SearchInput = styled.input `
     margin-top : 10px;
     height: 1rem;
 
-    media (min-width:768px) {
+    @media (min-width:768px) {
         width: 100%;
         max-width: 15vw;
         margin-top : 0px;
@@ -51,6 +51,8 @@ const FilterHandler = styled.div `
     @media (min-width:768px) {
         align-items: center;
         margin-top : 0px;
+        margin-bottom: 0px;
+        margin-left: 55px;
     }
 `;
 
@@ -83,10 +85,29 @@ const FilterOptions = styled.div<{ isopen : string }> `
     flex-direction: column;
     align-items: center;
 
-    media (min-width:768px) {
+    @media (min-width:768px) {
         flex-wrap: wrap;
         justify-content: space-around;
+        height: 5vh;
+        overflow-x: scroll;
+        overflow-y: hidden;
     }
+
+    &::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+      }
+      
+    &::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3); 
+        border-radius: 10px;
+    }
+      
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5); 
+    }
+
 `;
 
 const FilterOption = styled.div<{ ischoiced : string }>`
@@ -133,7 +154,7 @@ export function NavBar({ onSearch, onFilterTypeChange, pokemonPerPage, filterTyp
     
     const handleSelectFilterOption = (option: string) => {
         onFilterTypeChange({target: {value: option}} as React.ChangeEvent<HTMLSelectElement>);
-        setIsFilterOptionsOpen(false);
+        setIsFilterOptionsOpen(true);
     };
     
 
