@@ -1,54 +1,567 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { apiUrl } from '../../App';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+import { useDispatch } from 'react-redux';
+import { addFavoritePokemon, removeFavoritePokemon } from '../../reducers/actions/index';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../reducers/reducer/types';
+import { connect } from 'react-redux';
 
-const PoPUpContainer = styled.div`
+const slideUp = keyframes `
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+`;
+
+const slideDown = keyframes `
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
+    }
+`;
+
+
+const PoPUpContainer = styled.div<{ispopupinfoopen: string}>`
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100vw;
     height: 100vh;
-    z-index: 10;
+    transition: top 0.3s eas-in-out;
+    
+    animation: ${({ ispopupinfoopen }) => (ispopupinfoopen === 'true' ? slideUp : slideDown)} 0.3s ease-in-out;
 `;
 
 const PoPUpContent = styled.div`
     display: flex;
+    width: 100vw;
+    height: 100vh;
     flex-direction: column;
     align-items: center;
     background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    
+
     @media (min-width:768px) {
         width: 50vw;
         max-height: 80vh;
-        overflow-y: auto;
+        border-radius: 10px;
+    }
+`;
+
+const PopUpCard = styled.div<{type : string[] }> `
+    --normal: rgb(168, 167, 122, 0.8);
+    --fire: rgb(238, 129, 48, 0.8);
+    --water: rgb(99, 144, 240, 0.8);
+    --electric: rgb(247, 208, 44, 0.8);
+    --grass: rgb(122, 199, 76, 0.8);
+    --ice: rgb(150, 217, 214, 0.8);
+    --fighting: rgb(194, 46, 40, 0.8);
+    --poison: rgb(163, 62, 161, 0.8);
+    --ground: rgb(226, 191, 101, 0.8);
+    --flying: rgb(169, 143, 243, 0.8);
+    --psychic: rgb(249, 85, 135, 0.8);
+    --bug: rgb(166, 185, 26, 0.8);
+    --rock: rgb(182, 161, 54, 0.8);
+    --ghost: rgb(115, 87, 151, 0.8);
+    --dragon: rgb(111, 53, 252, 0.8);
+    --dark: rgb(112, 87, 70, 0.8);
+    --steel: rgb(183, 183, 206, 0.8);
+    --fairy: rgb(214, 133, 173, 0.8);
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 30%;
+    background: linear-gradient(
+        to right bottom,
+        ${({ type }) => (type[0] ? `var(--${type[0]})` : 'none')} 70%,
+        ${({ type }) => (type[1] ? `var(--${type[1]})` : `var(--${type[0]})`)} 30%
+    );
+    background-color: rgba(255, 255, 255, 0.9);
+    
+
+    @media (min-width:768px) {
+        border-top-right-radius: 10px;
+        border-top-left-radius: 10px;
+    }
+`;
+
+const CardImage = styled.div`
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 70%;
+`;
+
+const CardText = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    height: 30%;
+    align-items: center;
+    font-weight: bold;
+    font-size: 80%;
+
+    @media (min-width:250px) {
+        font-size: 120%;
+    }
+    
+`;
+
+const CardTextInfo = styled.div`
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    padding-left: 32px;
+
+    @media (min-width:768px) {
+        padding-left: 0px;
+    }
+`;
+
+const CardIndex = styled.p`
+    font-weight: lighter;
+    font-size: 80%;
+
+    @media (min-width:250px) {
+        font-size: 100%;
     }
 `;
 
 const ButtonContainer = styled.div`
     display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
+    height: 10%;
+    width: 95%;
+    justify-content: space-between;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    &::-webkit-scrollbar {
+        height: 6px;
+      }
+      
+    &::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3); 
+        border-radius: 10px;
+    }
+      
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5); 
+    }
+
 `;
 
 const Button = styled.button<{active: string}>`
+    display: inline-block;
+    height: 44px; 
     margin: 5px;
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
-    background-color: ${({ active }) => (active === 'true' ? 'lightblue' : 'lightgray')};
-    color: ${({ active }) => (active === 'true' ? 'black' : 'gray')};
+    background-color: ${({ active }) => (active === 'true' ? '#ffd900' : '#fff')};
+    color: ${({ active }) => (active === 'true' ? 'rgb(46, 48, 87)' : 'gray')};
     cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    border-bottom: 2px solid rgba(128, 128, 128, 0.3);
+    border-left: 2px solid rgba(128, 128, 128, 0.3);
+    border-top: 2px solid gray;
+    border-right: 2px solid gray;
+    font-weight: bold;
+    font-size: 70%;
+
+    @media (min-width:250px) {
+        font-size: 90%;
+    }
+
+    &:hover {
+        transform: scale(1.05);
+    }
 `;
 
 const DivContent = styled.div<{active: string}>`
-    display: ${({ active }) => (active === 'true' ? 'block' : 'none')};
+    display: ${({ active }) => (active === 'true' ? 'flex' : 'none')};
+    flex-direction: column;
+    height: 60%;
+    width: 100%;
+    overflow-y: scroll;
+
+    &::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+      }
+      
+    &::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3); 
+        border-radius: 10px;
+    }
+      
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        -webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.5); 
+    }
+`;
+
+const About = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+`;
+
+const AboutInfo = styled.div `
+    display : flex;
+    flex-direction: row;
+    justify-content: space-around;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const AboutInfoText = styled.div`
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const AboutTextOpacity = styled.p `
+    color: rgba(46, 48, 87, 0.6);
+`;
+
+const Evolution = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+`;
+
+const EvolutionContent = styled.div `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width:100%;
+`;
+
+const EvolutionInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const EvolutionFirst = styled.div`
+    display: flex;  
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 100%;
+`;
+
+const EvolutionSecond = styled.div`
+    display: flex;  
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 100%;
+`;
+
+const EvolutionThird = styled.div`
+    display: flex;  
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 100%;
+`;
+
+const EvolutionImage = styled.img `
+    width: 100%;    
+    height: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 100px;
+`;
+
+const EvolutionText = styled.p `
+    color: rgba(46, 48, 87, 0.6);
+`;
+
+const FormContent = styled.div`
+    display: flex;  
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 20px;
+`;
+
+const FormInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const FormImage = styled.img `
+    width: 96px;    
+    height: 96px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 100px;
+`;
+
+const FormText = styled.p `
+    color: rgba(46, 48, 87, 0.6);
+`;
+
+const Stats = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+`;
+
+const StatContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    justify-content: space-around;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const StatInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+`;
+
+const StatsText = styled.li `
     margin: 10px;
-    padding: 10px;
-    background-color: lightblue;
+    font-size: 80%;
+
+    @media (min-width:768px) {
+        font-size: 100%;
+    }
+`;
+
+const TypeContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    justify-content: space-around;
+`;
+
+const Type = styled.div<{ type : string }>`
+    --normal: rgb(168, 167, 122);
+    --fire: rgb(238, 129, 48);
+    --water: rgb(99, 144, 240);
+    --electric: rgb(247, 208, 44);
+    --grass: rgb(122, 199, 76);
+    --ice: rgb(150, 217, 214);
+    --fighting: rgb(194, 46, 40);
+    --poison: rgb(163, 62, 161);
+    --ground: rgb(226, 191, 101);
+    --flying: rgb(169, 143, 243);
+    --psychic: rgb(249, 85, 135);
+    --bug: rgb(166, 185, 26);
+    --rock: rgb(182, 161, 54);
+    --ghost: rgb(115, 87, 151);
+    --dragon: rgb(111, 53, 252);
+    --dark: rgb(112, 87, 70);
+    --steel: rgb(183, 183, 206);
+    --fairy: rgb(214, 133, 173);
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 20%;
+    height: 100%;
+    border-radius: 12px;
+    border: solid 4px;
+    border-color: #DCBF00;
+    align-items: center;
+    background-color: ${({ type }) => (type ? `var(--${type})` : 'none')};
+`;
+
+const SpanType = styled.div `
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    font-weight: bolder;
+    font-size: 80%;
+    
+    @media (min-width:768px) {
+        font-size: 100%;
+    }
+`;
+
+const Move = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+`;
+
+const MoveContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const MoveInfo = styled.li `
+    display : flex;
+    flex-direction: column;
+    margin: 5%;
+`;
+
+const Ability = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+`;
+
+const AbilityContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const AbilityInfo = styled.li `
+    display : flex;
+    flex-direction: column;
+    margin: 5%;
+`;
+
+const HeldItem = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+`;
+
+const HeldItemContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const HeldItemInfo = styled.li `
+    display : flex;
+    flex-direction: column;
+    margin: 5%;
+`;
+
+const Location = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+`;
+
+const LocationContent = styled.div `
+    display : flex;
+    flex-direction: row;
+    justify-content: space-around;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+`;
+
+const LocationInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+`;
+
+const LocationText = styled.li `
+    margin: 10px;
+    font-size: 80%;
+    
+    @media (min-width:768px) {
+        font-size: 100%;
+    }
+`;
+
+
+
+const CloseButton = styled.button`
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+`;
+
+const CloseIcon = styled.span`
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: #000;
+        transform: translateY(-50%);
+    }
+
+    &::before {
+        transform: rotate(45deg);
+    }
+
+    &::after {
+        transform: rotate(-45deg);
+    }
+`;
+
+const FavoriteButton = styled.button`
+    background-color: transparent;
+    border: none;
+    font-size: 32px;
+    color: #DCBF00;
+    cursor: pointer;
+    z-index: 2;
+    
+`;
+
+const NotFavoriteButton = styled.button`
+    background-color: transparent;
+    border: none;
+    font-size: 32px;
+    color: grey;
+    cursor: pointer;
+    z-index: 2;
+
 `;
 
 export interface PopUpInfoPokemon {
@@ -58,15 +571,16 @@ export interface PopUpInfoPokemon {
     typeNames: string[];
     gameIndex: number;
     pokemonData: any;
+    evolutionRank: number;
 }
 
 interface PopupProps {
     selectedPokemon: PopUpInfoPokemon | null;
     onClosePopUpInfo: () => void;
+    isPopUpInfoOpen: boolean;
 }
 
-export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
-    
+export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }:PopupProps) {
     const [moveDetails, setMoveDetails] = useState<Record<string, string>>({});
     const [abilityDetails, setAbilityDetails] = useState<Record<string, string>>({});
     const [formsImage, setFormsImage] = useState<Record<string, string>>({});
@@ -88,6 +602,11 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
     const [formsSwitchable, setFormsSwitchable] = useState<boolean>();
     const [genus, setGenus] = useState<string[]>([]);
     const [activeButton, setActiveButton] = useState('about');
+    const [haveEvolution, setHaveEvolution] = useState<boolean>(false);
+    const [haveNextEvolution, setHaveNextEvolution] = useState<boolean>(false);
+    const [locationNumber, setLocationNumber] = useState<number>(0);
+    const dispatch = useDispatch();
+    const favoritePokemons = useSelector((state: RootState) => state.favorites);
 
     useEffect(() => {
         if (selectedPokemon) {
@@ -114,7 +633,9 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                     const hatchSteps = pokemonData.hatch_counter * 255;
                     const eggGroup = pokemonData.egg_groups.map((group: {name: string}) => ( group.name ))
                     const shape = pokemonData.shape ? pokemonData.shape.name : "looking like nothing";
-                    const generation = pokemonData.generation.name;
+                    const generation = pokemonData.generation.name.replace(/-/g, ' ').replace(/^(.*?\s)(.*)$/, (match:string, firstPart:string, secondPart:string) => {
+                        return firstPart + secondPart.toUpperCase();
+                      });
                     const formsSwitchable = pokemonData.forms_switchable;
                     const genera = pokemonData.genera.filter(
                         (entry: { language: { name: string } }) => entry.language.name === 'en'
@@ -166,8 +687,9 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                     const pokemonData = response.data;
                     const locationEntries = pokemonData.location_area_encounters;
                     const locationResponse = await axios.get(locationEntries);
-                    const location = locationResponse.data.map((array: { location_area: { name: string } }) => array.location_area.name);
+                    const location = locationResponse.data.map((array: { location_area: { name: string } }) => array.location_area.name.charAt(0).toUpperCase() + array.location_area.name.slice(1).replace(/-/g, ' ') );
                     setLocation(location);
+                    setLocationNumber(location.length);
                 } catch (error) {
                     console.log(error);
                 }
@@ -178,7 +700,6 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                 const fetchMoveDetails = async () => {
                     try {
                         const response = await axios.get(array.move.url);
-                        console.log(response.data);
                         const moveData = response.data;
                         const effectEntry = moveData.effect_entries.find(
                             (entry: { language: { name: string } }) => entry.language.name === 'en'
@@ -271,7 +792,10 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
             typeNames : [],
             gameIndex : species.gameIndex,
             pokemonData : null,
+            evolutionRank : 1,
         };
+        setHaveEvolution(false);
+        setHaveNextEvolution(false);
         evolutionChain.push(pokemon);
         if (chain.evolves_to.length !== 0) {
             for (const evolvesTo of chain.evolves_to){
@@ -287,8 +811,11 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                     typeNames : [],
                     gameIndex : evolvesToSpecies.gameIndex,
                     pokemonData : null,
+                    evolutionRank: 2,
                 }
+                setHaveEvolution(true);
                 evolutionChain.push(evolvesToPokemon);
+                
                 if (evolvesTo.evolves_to && evolvesTo.evolves_to.length !== 0) {
                     for (const evolvesToNext of evolvesTo.evolves_to) {
                         const evolvesToNextSpecies = evolvesToNext.species;
@@ -303,8 +830,10 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                             typeNames : [],
                             gameIndex : evolvesToNextSpecies.gameIndex,
                             pokemonData : null,
+                            evolutionRank: 3,
                         }
                         evolutionChain.push(evolvesToNextPokemon);
+                        setHaveNextEvolution(true);
                     }
                 }
             }
@@ -316,17 +845,52 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
         setActiveButton(buttonName);
     };
 
+    const handleFavorites = (pokemon: PopUpInfoPokemon) => {
+        if (favoritePokemons && favoritePokemons.favorites.length > 0) {
+            const isPokemonFavorite = favoritePokemons.favorites.some((fav) => fav.name === pokemon.name);
+            
+            if (isPokemonFavorite) {
+              dispatch(removeFavoritePokemon(pokemon));
+            } else {
+              dispatch(addFavoritePokemon(pokemon));
+            }
+        } else {
+            dispatch(addFavoritePokemon(pokemon));
+        }
+    };  
+
+    
 
 
     return (
-        <PoPUpContainer>
+        <PoPUpContainer ispopupinfoopen={isPopUpInfoOpen ? 'true' : 'false'}>
             <PoPUpContent>
-                <h2>{selectedPokemon.name} #{selectedPokemon.gameIndex}</h2>
-                <img src={selectedPokemon.image} alt={selectedPokemon.name} />
+                <CloseButton onClick={() => {onClosePopUpInfo(); handleButtonClick('about')}}>
+                    <CloseIcon />
+                </CloseButton>
+                <PopUpCard type={selectedPokemon.typeNames}>
+                    <CardText>
+                        <CardTextInfo>
+                            <h2>{selectedPokemon.name.charAt(0).toUpperCase() + selectedPokemon.name.slice(1) }</h2>
+                            <CardIndex>#{selectedPokemon.gameIndex.toString().padStart(4, "0")}</CardIndex>
+                        </CardTextInfo>
+                        {favoritePokemons.favorites && favoritePokemons.favorites.some((fav) => fav.name === selectedPokemon.name) ?
+                            <FavoriteButton onClick={() => handleFavorites(selectedPokemon)}>
+                                ★
+                            </FavoriteButton>
+                        :
+                            <NotFavoriteButton onClick={() => handleFavorites(selectedPokemon)}>
+                                ☆
+                            </NotFavoriteButton>
+                        }
+                    </CardText>
+                    <CardImage>
+                        <img src={selectedPokemon.image} alt={selectedPokemon.name} />
+                    </CardImage>
+                </PopUpCard>
                 <ButtonContainer>
                     <Button active={activeButton === 'about' ? 'true' : 'false'} onClick={() => handleButtonClick('about')}>About</Button>
-                    <Button active={activeButton === 'evolution' ? 'true' : 'false'} onClick={() => handleButtonClick('evolution')}>Evolution</Button>
-                    <Button active={activeButton === 'type' ? 'true' : 'false'} onClick={() => handleButtonClick('type')}>Type</Button>
+                    {haveEvolution === true ? <Button active={activeButton === 'evolution' ? 'true' : 'false'} onClick={() => handleButtonClick('evolution')}>Evolution</Button> : null}
                     <Button active={activeButton === 'stats' ? 'true' : 'false'} onClick={() => handleButtonClick('stats')}>Stats</Button>
                     <Button active={activeButton === 'moves' ? 'true' : 'false'} onClick={() => handleButtonClick('moves')}>Moves</Button>
                     <Button active={activeButton === 'abilities' ? 'true' : 'false'} onClick={() => handleButtonClick('abilities')}>Abilities</Button>
@@ -337,112 +901,216 @@ export function PopUpInfo({ selectedPokemon, onClosePopUpInfo }:PopupProps) {
                     <Button active={activeButton === 'location' ? 'true' : 'false'} onClick={() => handleButtonClick('location')}>Location</Button>
                     :null}
                     {selectedPokemon.pokemonData.held_items.length > 0 ? 
-                    <Button active={activeButton === 'heldItems' ? 'true' : 'false'} onClick={() => handleButtonClick('heldItems')}>Held items</Button>
+                    <Button active={activeButton === 'heldItems' ? 'true' : 'false'} onClick={() => handleButtonClick('heldItems')}>Helditems</Button>
                     :null}
                 </ButtonContainer>
                 <DivContent active={activeButton === 'about' ? 'true' : 'false'}>
-                    <p>{description}</p>
-                    <p>
-                        Height: {height} m<br />
-                        Weight: {weight} kg<br />
-                        {malePercentage === 'Genderless' ? (
-                            <span>Gender: {malePercentage}<br /></span>
-                        ) : (
-                        <>
-                            Male percentage: {malePercentage}%<br />
-                            Female percentage: {femalePercentage}%<br />
-                        </>
-                        )}
+                    <About>
+                        <p>{description}</p>
                         {isBaby ? (
-                            <span>This pokemon is a baby...<br /></span>
+                            <p>This pokemon is a baby...</p>
                         ) : null}
                         {isLegendary ? (
-                            <span>This pokemon is a legendary one !<br /></span>
+                           <p>This pokemon is a legendary one !</p>
                         ) : null}
                         {isMythical ? (
-                            <span>This pokemon is a mythical one !<br /></span>
+                           <p>This pokemon is a mythical one !</p>
                         ) : null}
-                        Capture percentage: {capturePercentage}%<br />
-                        Hatch setps: {hatchSteps}<br />
-                        Egg group : {eggGroup.join(", ")}<br />
-                        Shape: {shape}<br />
-                        Generation: {generation}<br />
-                        Genus: {genus}<br />
-                    </p>
+                        <AboutInfo>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Height</AboutTextOpacity><p>{height} m </p>
+                            </AboutInfoText>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Weight</AboutTextOpacity><p>{weight} kg ({(weight * 2.2).toFixed(1)} lbs)</p>
+                            </AboutInfoText>
+                        </AboutInfo>
+
+                        {malePercentage === 'Genderless' ? (
+                            <AboutInfo>
+                                <p>This pokemon is {malePercentage.toLowerCase()}</p>
+                            </AboutInfo>
+                        ) : (
+                        <>
+                            <AboutInfo>
+                                <AboutInfoText>
+                                    <AboutTextOpacity>Male percentage</AboutTextOpacity><p>{malePercentage}%</p>
+                                </AboutInfoText>
+                                <AboutInfoText>
+                                    <AboutTextOpacity>Female percentage</AboutTextOpacity><p>{femalePercentage}%</p>
+                                </AboutInfoText>
+                            </AboutInfo>
+                        </>
+                        )}
+                        <AboutInfo>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Egg group</AboutTextOpacity><p>{eggGroup.join(", ")}</p>
+                            </AboutInfoText>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Hatch setps</AboutTextOpacity><p>{hatchSteps}</p>
+                            </AboutInfoText>
+                        </AboutInfo>
+                        <AboutInfo>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Generation</AboutTextOpacity><p>{generation}</p>
+                            </AboutInfoText>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Capture percentage</AboutTextOpacity><p>{capturePercentage}%</p>
+                            </AboutInfoText>
+                        </AboutInfo>
+                        <AboutInfo>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Shape</AboutTextOpacity><p>{shape}</p>
+                            </AboutInfoText>
+                            <AboutInfoText>
+                                <AboutTextOpacity>Genus</AboutTextOpacity><p>{genus}</p>
+                            </AboutInfoText>
+                        </AboutInfo>
+                    </About>
                 </DivContent>
                 <DivContent active={activeButton === 'evolution' ? 'true' : 'false'}>
-                    <h3>Evolution Chain</h3>
-                    <ul className="EvolutionChain">
-                        {evolutionChain.map((pokemon) => (
-                            <li key={pokemon.name} className="Evolution">
-                                <img src={pokemon.image} alt={pokemon.name} />
-                                <strong>{pokemon.name}</strong>
-                            </li>
-                        ))}
-                    </ul>
+                    <Evolution>
+                        <h3>Evolution Chain</h3>
+                        <EvolutionContent>
+                            <h4>First Stage</h4>
+                            <EvolutionFirst>
+                                {evolutionChain.map((pokemon) => (
+                                    pokemon.evolutionRank === 1 ? 
+                                        <EvolutionInfo key={pokemon.name}>
+                                            <EvolutionImage src={pokemon.image} alt={pokemon.name} />
+                                            <EvolutionText>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</EvolutionText>
+                                        </EvolutionInfo>
+                                    : null
+                                ))}
+                            </EvolutionFirst>
+                            {haveEvolution === true ? <h4>Second Stage</h4> : null}
+                            <EvolutionSecond>
+                            {evolutionChain.map((pokemon) => (
+                                pokemon.evolutionRank === 2 ?
+                                    <EvolutionInfo key={pokemon.name}>
+                                        <EvolutionImage src={pokemon.image} alt={pokemon.name} />
+                                        <EvolutionText>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</EvolutionText>
+                                    </EvolutionInfo> 
+                                : null
+                            ))}
+                            </EvolutionSecond>
+                            {haveNextEvolution === true ? <h4>Third Stage</h4> : null}
+                            <EvolutionThird>
+                                {evolutionChain.map((pokemon) => (
+                                    pokemon.evolutionRank === 3 ?
+                                        <EvolutionInfo key={pokemon.name}>
+                                            <EvolutionImage src={pokemon.image} alt={pokemon.name} />
+                                            <EvolutionText>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</EvolutionText>
+                                        </EvolutionInfo>
+                                    : null
+                                ))}
+                            </EvolutionThird>
+                        </EvolutionContent>
+                    </Evolution>
                 </DivContent>
                 <DivContent active={activeButton === 'location' ? 'true' : 'false'}>
-                    <h3>Locations:</h3>
-                    <ul>
-                        {location.map((location) => (
-                            <li key={location}>{location}</li>
-                        ))}
-                    </ul>
-                </DivContent>
-                <DivContent active={activeButton === 'type' ? 'true' : 'false'}>
-                    <ul>
-                        {selectedPokemon.typeNames.map((type) => (
-                            <li key={type}>{type}</li>
-                        ))}
-                    </ul>
+                    <Location>
+                        <LocationContent>
+                            <LocationInfo>  
+                                {location.map((location, index) => (
+                                    index < (locationNumber / 2) ?
+                                        <LocationText key={location}>
+                                            {location}
+                                        </LocationText>
+                                    : null
+                                ))}
+                            </LocationInfo>
+                            <LocationInfo>  
+                                {location.map((location, index) => (
+                                    index > ((locationNumber / 2) - 1) ?
+                                        <LocationText key={location}>
+                                            {location}
+                                        </LocationText>
+                                    : null
+                                ))}
+                            </LocationInfo>
+                        </LocationContent>
+                    </Location>
                 </DivContent>
                 <DivContent active={activeButton === 'stats' ? 'true' : 'false'}>
-                    <ul>
-                        {selectedPokemon.pokemonData.stats.map((array: { base_stat: number; stat: { name: string } }) => (
-                            <li key={array.stat.name}>
-                                <strong>{array.stat.name}:</strong> {array.base_stat}
-                            </li>
-                        ))}
-                    </ul>
+                    <Stats>
+                        <StatContent>
+                            <StatInfo>
+                            {selectedPokemon.pokemonData.stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
+                                index < 3 ? 
+                                    <StatsText key={array.stat.name}><strong>{array.stat.name}:</strong> {array.base_stat}</StatsText>
+                                : null
+                            ))}
+                            </StatInfo>
+                            <StatInfo>
+                            {selectedPokemon.pokemonData.stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
+                                index > 2 ? 
+                                    <StatsText key={array.stat.name}><strong>{array.stat.name}:</strong> {array.base_stat}</StatsText>
+                                : null
+                            ))}
+                            </StatInfo>
+                        </StatContent>
+                        <TypeContent>
+                            {selectedPokemon.typeNames.map((name) => (
+                                <Type type={name} key={name}>
+                                    <SpanType>{name.toUpperCase()}</SpanType>
+                                </Type>
+                            ))}
+                        </TypeContent>
+                    </Stats>
                 </DivContent>
                 <DivContent active={activeButton === 'moves' ? 'true' : 'false'}>
-                    <ul>
+                    <Move>
                         {selectedPokemon.pokemonData.moves.map((array: { move: { name: string; url: string } }) => (
-                            <li key={array.move.name}>
-                                <strong>{array.move.name}</strong>
-                                {moveDetails[array.move.name] && <p>{moveDetails[array.move.name]}</p>}
-                            </li>
+                            <MoveContent key={array.move.name}>
+                                <MoveInfo>
+                                    <strong>{array.move.name.charAt(0).toUpperCase() + array.move.name.replace(/-/g, ' ').slice(1)}</strong>
+                                    {moveDetails[array.move.name] && <p>{moveDetails[array.move.name]}</p>}
+                                </MoveInfo>
+                            </MoveContent>
                         ))}
-                    </ul>
+                    </Move>
                 </DivContent>
                 <DivContent active={activeButton === 'heldItems' ? 'true' : 'false'}>
-                    <ul>
+                    <HeldItem>
                         {selectedPokemon.pokemonData.held_items.map((array: { item: { name: string } }) => (
-                            <li key={array.item.name}>{array.item.name}</li>
+                            <HeldItemContent key={array.item.name}>
+                                <HeldItemInfo>
+                                    {array.item.name.charAt(0).toUpperCase() + array.item.name.replace(/-/g, ' ').slice(1)}
+                                </HeldItemInfo>
+                            </HeldItemContent>
                         ))}
-                    </ul>
+                    </HeldItem>
                 </DivContent>
                 <DivContent active={activeButton === 'forms' ? 'true' : 'false'}>
-                    <ul>
+                    <FormContent>
                         {selectedPokemon.pokemonData.forms.map((array : { name : string; url : string }) => (
-                            <li key={array.url}>
-                                {formsImage[array.name] && <img src={formsImage[array.name]} alt={array.name} ></img>}
-                            </li>
+                            <FormInfo key={array.url}>
+                                <FormImage src={formsImage[array.name]} alt={array.name} />
+                                <FormText>{array.name.charAt(0).toUpperCase() + array.name.replace(/-/g, ' ').slice(1)}</FormText>
+                            </FormInfo>
                         ))}
-                    </ul>
+                    </FormContent>
                 </DivContent>
                 <DivContent active={activeButton === 'abilities' ? 'true' : 'false'}>
-                    <ul>
+                    <Ability>
                         {selectedPokemon.pokemonData.abilities.map((array : { ability : { name : string; url : string }}, index:number) => (
-                            <li key={`${array.ability.name}-${index}`}>
-                                <strong>{array.ability.name}</strong>
-                                {abilityDetails[array.ability.name] && <p>{abilityDetails[array.ability.name]}</p>}
-                            </li>
+                            <AbilityContent key={`${array.ability.name}-${index}`}>
+                                <AbilityInfo>
+                                    <strong>{array.ability.name.charAt(0).toUpperCase() + array.ability.name.replace(/-/g, ' ').slice(1)}</strong>
+                                    {abilityDetails[array.ability.name] && <p>{abilityDetails[array.ability.name]}</p>}
+                                </AbilityInfo>
+                            </AbilityContent>
                         ))}
-                    </ul>
+                    </Ability>
                 </DivContent>
-                <button onClick={onClosePopUpInfo}>Fermer</button>
               </PoPUpContent>
         </PoPUpContainer>
     );
 };
+
+
+const mapStateToProps = (state: RootState) => ({
+    favoritePokemons: state.favorites.favorites,
+  });
+  
+export default connect(mapStateToProps)(PopUpInfo);

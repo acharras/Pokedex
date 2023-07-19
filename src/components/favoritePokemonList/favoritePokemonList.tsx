@@ -1,36 +1,14 @@
-import axios from 'axios';
-import { apiUrl } from '../../App';
 import { useEffect, useState } from 'react'
 import { NavBar } from '../navBar/navBar';
 import  { PopUpInfo } from '../popUpInfo/popUpInfo';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { addFavoritePokemon, removeFavoritePokemon } from '../../reducers/actions/index';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/reducer/types';
 import { connect } from 'react-redux';
+import { Pokemon } from '../pokemonList/pokemonList'
 import { PokemonType } from '../../App'
-
-const blink = keyframes `
-    from { background: #eee; }
-    to { background: #e74c3c; }
-`;
-
-const shake = keyframes `
-    0 { transform: translate(0, 0) rotate(0); }
-    20% { transform: translate(-10px, 0) rotate(-20deg); }
-    30% { transform: translate(10px, 0) rotate(20deg); }
-    50% { transform: translate(-10px, 0) rotate(-10deg); }
-    60% { transform: translate(10px, 0) rotate(10deg); }
-    100% { transform: translate(0, 0) rotate(0); }
-`;
-
-const fall = keyframes `
-    0% { top: -200px }
-    60% { top: 0 }
-    80% { top: -20px }
-    100% { top: 0 }
-`;
 
 const Card = styled.div<{ type : string[] }>`
     --normal: rgb(168, 167, 122);
@@ -332,6 +310,7 @@ const NotFavoriteButton = styled.button`
     @media (min-width:768px) {
         font-size: 32px;
     }
+
 `;
 
 
@@ -364,80 +343,12 @@ const NoPokemonListContent = styled.div`
     }
 `;
 
-const Loading = styled.div`
-    *, *:before, *:after {
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-    }
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-`;
-
-const Pokeball = styled.div `
-    position: relative;
-    width: 200px;
-    height: 200px;
-    background: #fff;
-    border: 10px solid #000;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: inset -10px 10px 0 10px #ccc;
-    animation:  ${fall} .25s ease-in-out,
-                ${shake} 1.25s cubic-bezier(.36,.07,.19,.97) 3;
-
-`;
-
-const PokeballBeforeAfter = styled.div`
-    position: absolute;
-`;
-
-const PokeballBefore = styled(PokeballBeforeAfter)`
-    background: red;
-    width: 100%;
-    height: 50%;
-`;
-
-const PokeballAfter = styled(PokeballBeforeAfter)`
-    top: calc(50% - 10px);
-    width: 100%;
-    height: 20px;
-    background: #000;
-`;
-
-const PokeballButton = styled.div `
-    position: absolute;
-    top: calc(50% - 30px);
-    left: calc(50% - 30px);
-    width: 60px;
-    height: 60px;
-    background: #7f8c8d;
-    border: 10px solid #fff;
-    border-radius: 50%;
-    z-index: 10;
-    box-shadow: 0 0 0 10px black;
-    animation: ${blink} .5s alternate 7;
-`;
-
-export interface Pokemon {
-    name: string;
-    url: string;
-    image: string;
-    typeNames: string[];
-    gameIndex: number;
-    pokemonData: any;
-    evolutionRank: number;
-  }
-
-interface PokemonListProps {
+interface FavoritePokemonListProps {
     typeList: PokemonType[];
 }
-
-
-export function PokemonList(typeList: PokemonListProps) {
-    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
+export function FavoritePokemonList(typeList: FavoritePokemonListProps) {
+    const favoritePokemons = useSelector((state: RootState) => state.favorites.favorites);
+    const favoritePokemonList = useSelector((state: RootState) => state.favorites);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
@@ -445,38 +356,19 @@ export function PokemonList(typeList: PokemonListProps) {
     const [filterType, setFilterType] = useState('');
     const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
     const [isPopUpInfoOpen, setIsPopUpInfoOpen] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
     const dispatch = useDispatch();
-    const favoritePokemons = useSelector((state: RootState) => state.favorites);
+    
+
     
 
     const fetchPokemonList = async () => {
         try {
-
-            const response = await axios.get(apiUrl + `pokemon?limit=1010`);
-            const results: Pokemon[] = response.data.results;
-
-            const pokemonDataPromises = results.map(async (pokemon) => {
-                const pokemonResponse = await axios.get(pokemon.url);
-                const { name, sprites, types, id } = pokemonResponse.data;
-                const pokemonData = pokemonResponse.data;
-                const image = sprites.front_default;
-                const typeNames = types.map((array: any) => array.type.name);
-                const gameIndex = id;
-    
-                return { name, image, typeNames, gameIndex, pokemonData } as Pokemon;
-            });
-
-            const pokemonData = await Promise.all(pokemonDataPromises);
-            setPokemonList(pokemonData);
-            setIsLoaded(true);
-
             if (searchTerm) {
-                const filteredTotalCount = pokemonData.filter((pokemon) => pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
+                const filteredTotalCount = favoritePokemons.filter((pokemon) => pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
                 const totalPages = Math.ceil(filteredTotalCount / pokemonPerPage);
                 setTotalPages(totalPages);
             } else {
-                const totalCount = pokemonData.filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
+                const totalCount = favoritePokemons.filter((pokemon) => filterType === '' || pokemon.typeNames.includes(filterType)).length;
                 const totalPages = Math.ceil(totalCount / pokemonPerPage);
                 setTotalPages(totalPages);
             }
@@ -507,7 +399,7 @@ export function PokemonList(typeList: PokemonListProps) {
     };
 
     
-    const handleOpenPopUpInfo = (pokemon: Pokemon, event: React.MouseEvent) => {    
+    const handleOpenPopUpInfo = (pokemon: Pokemon, event: React.MouseEvent) => {
         setSelectedPokemon(pokemon);
         setIsPopUpInfoOpen(true);
         event.stopPropagation();
@@ -576,21 +468,21 @@ export function PokemonList(typeList: PokemonListProps) {
         return buttons;
     }
 
-    const filteredPokemonList = searchTerm
-    ? pokemonList.filter((pokemon) =>
+    const filteredFavoritePokemonList = searchTerm
+    ? favoritePokemons.filter((pokemon) =>
         pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) =>
         filterType === '' || pokemon.typeNames.includes(filterType))
-    : pokemonList.filter((pokemon) =>
+    : favoritePokemons.filter((pokemon) =>
         filterType === '' || pokemon.typeNames.includes(filterType));
 
     const startIndex = (currentPage - 1) * pokemonPerPage;
-    const endIndex = startIndex + pokemonPerPage;
-    const currentPokemonList = filteredPokemonList.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + pokemonPerPage, filteredFavoritePokemonList.length);
+    const currentFavoritePokemonList = filteredFavoritePokemonList.slice(startIndex, endIndex);
 
     
     const handleFavorites = (pokemon: Pokemon, event: React.MouseEvent) => {
-        if (favoritePokemons && favoritePokemons.favorites.length > 0) {
-            const isPokemonFavorite = favoritePokemons.favorites.some((fav) => fav.name === pokemon.name);
+        if (favoritePokemons && favoritePokemonList.favorites.length > 0) {
+            const isPokemonFavorite = favoritePokemonList.favorites.some((fav) => fav.name === pokemon.name);
             
             if (isPokemonFavorite) {
               dispatch(removeFavoritePokemon(pokemon));
@@ -618,29 +510,28 @@ export function PokemonList(typeList: PokemonListProps) {
           setCurrentPage(1);
         }
         
-        const filteredTotalCount = pokemonList.filter((pokemon) =>
+        const filteredTotalCount = favoritePokemons.filter((pokemon) =>
         pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())).filter((pokemon) => 
         filterType === '' || pokemon.typeNames.includes(filterType)).length;
         const totalPages = Math.ceil(filteredTotalCount / pokemonPerPage);
         setTotalPages(totalPages);
 // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [searchTerm, filterType, pokemonPerPage, pokemonList]);
-      
-      
+      }, [searchTerm, filterType, pokemonPerPage]);
       
     return (
         <Pokedex>
-            {isLoaded === true ? (
-                <>
             <NavBar 
                 onSearch={handleSearch}
                 onFilterTypeChange={handleFilterTypeChange}
                 pokemonPerPage={pokemonPerPage}
                 filterType={filterType}
                 typeList={typeList.typeList} />
+            {favoritePokemons.length === 0 ? (
+                <NoPokemonListContent>No favorite Pokémon yet.</NoPokemonListContent>
+            ) : (
             <PokemonListContent className="PokemonListContent">
-                {currentPokemonList.length !== 0 ? (
-                    currentPokemonList.map((pokemon) => (
+                {currentFavoritePokemonList.length !== 0 ? (
+                    currentFavoritePokemonList.map((pokemon) => (
                     <Card key={pokemon.name} type={pokemon.typeNames} onClick={(e) => handleOpenPopUpInfo(pokemon, e)}>
                         <CardTop>
                             <Text>
@@ -648,7 +539,7 @@ export function PokemonList(typeList: PokemonListProps) {
                                     <div>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1) }</div>
                                     <Index>#{pokemon.gameIndex.toString().padStart(4, "0")}</Index>
                                 </TextInfo>
-                                {favoritePokemons.favorites && favoritePokemons.favorites.some((fav) => fav.name === pokemon.name) ?
+                                {favoritePokemons && favoritePokemons.some((fav) => fav.name === pokemon.name) ?
                                     <FavoriteButton onClick={(e) => handleFavorites(pokemon, e)}>
                                         ★
                                     </FavoriteButton>
@@ -677,6 +568,7 @@ export function PokemonList(typeList: PokemonListProps) {
                     <NoPokemonListContent>Pokemon not found.</NoPokemonListContent>
                 )}
             </PokemonListContent>
+            )}
             <Footer>
                 <PaginationContent className="Pagination">
                     <p>Page:</p>
@@ -698,10 +590,6 @@ export function PokemonList(typeList: PokemonListProps) {
             <PopUpContainer className="PopUpContainer" open={isPopUpInfoOpen}>
                 <PopUpInfo selectedPokemon={selectedPokemon} isPopUpInfoOpen={isPopUpInfoOpen} onClosePopUpInfo={handleClosePopUpInfo} />
             </PopUpContainer>
-            </>
-            ) : (
-                <Loading><Pokeball><PokeballBefore /><PokeballAfter /><PokeballButton /></Pokeball></Loading>
-            )}
         </Pokedex>
     );
 }
@@ -710,4 +598,4 @@ const mapStateToProps = (state: RootState) => ({
     favoritePokemons: state.favorites.favorites,
   });
   
-export default connect(mapStateToProps)(PokemonList);
+export default connect(mapStateToProps)(FavoritePokemonList);
