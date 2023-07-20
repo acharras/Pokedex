@@ -37,7 +37,6 @@ const Footer = styled.div `
 
     @media (min-width:768px) {
         justify-content: flex-end;
-        height: 8vh;
     }
 `;
 

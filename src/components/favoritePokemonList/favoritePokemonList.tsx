@@ -108,7 +108,7 @@ const NoPokemonListContent = styled.div`
     overflow-y: auto;
 
     @media (min-width:768px) {
-        height: 80vh;
+        height: 100vh;
     }
 
     &::-webkit-scrollbar {
