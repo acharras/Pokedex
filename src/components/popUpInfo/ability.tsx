@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { PopUpInfoPokemon } from './popUpInfo';
 
 const AbilityContainer = styled.div `
     display: flex;
@@ -25,15 +24,15 @@ const AbilityInfo = styled.li `
 
 
 interface AbilityProps {
-    selectedPokemon: PopUpInfoPokemon;
+    abilities: { ability : { name : string; url : string }}[];
     abilityDetails: Record<string, string>;
 }
 
-export function Ability({ selectedPokemon, abilityDetails }:AbilityProps) {
+export function Ability({ abilities, abilityDetails }:AbilityProps) {
     
     return (
         <AbilityContainer>
-            {selectedPokemon.pokemonData.abilities.map((array : { ability : { name : string; url : string }}, index:number) => (
+            {abilities.map((array : { ability : { name : string; url : string }}, index:number) => (
                 <AbilityContent key={`${array.ability.name}-${index}`}>
                     <AbilityInfo>
                         <strong>{array.ability.name.charAt(0).toUpperCase() + array.ability.name.replace(/-/g, ' ').slice(1)}</strong>

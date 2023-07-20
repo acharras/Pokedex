@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { PopUpInfoPokemon } from './popUpInfo';
 
 const FormContent = styled.div`
     display: flex;  
@@ -28,21 +27,39 @@ const FormText = styled.p `
     color: rgba(46, 48, 87, 0.6);
 `;
 
+const NoForm = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+    align-items: center;
+    justify-content: center;
+`;
+
 interface FormProps {
-    selectedPokemon: PopUpInfoPokemon;
+    forms:{ name : string; url : string }[];
     formsImage: Record<string, string>;
 }
 
-export function Form({ selectedPokemon, formsImage }:FormProps) {
+export function Form({ forms, formsImage }:FormProps) {
 
     return (
         <FormContent>
-            {selectedPokemon.pokemonData.forms.map((array : { name : string; url : string }) => (
+            {forms.length > 1 ? (
+            <>
+            {forms.map((array : { name : string; url : string }) => (
                 <FormInfo key={array.url}>
                     <FormImage src={formsImage[array.name]} alt={array.name} />
                     <FormText>{array.name.charAt(0).toUpperCase() + array.name.replace(/-/g, ' ').slice(1)}</FormText>
                 </FormInfo>
             ))}
+            </>
+            ) : (
+                <NoForm>
+                    This Pokemon doesn't have any other forms...
+                </NoForm>
+            )}
         </FormContent>
     );
 };

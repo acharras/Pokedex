@@ -34,8 +34,7 @@ function App() {
                 const typeResults: Pokemon[] = typeResponse.data.results;
 
                 const typeDataPromises = typeResults.map(async (type) => {
-                    const typeResponse = await axios.get(type.url);
-                    const { name } = typeResponse.data;
+                    const name = type.name;
                 
                     return { name } as PokemonType;
                 })
@@ -58,7 +57,7 @@ function App() {
     	<Router>
 			<Switch>
 				<Route exact path={'/'} render={() => <PokemonList typeList={typeList} />} />
-				<Route exact path={'/favorite'} render={() => <FavoritePokemonList typeList={typeList} />} />
+				<Route exact path={'/favourite'} render={() => <FavoritePokemonList typeList={typeList} />} />
 				<Route component={NotFound} />
 			</Switch>
     	</Router>

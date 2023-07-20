@@ -3,7 +3,7 @@ import { apiUrl } from '../../App';
 import { useEffect, useState } from 'react'
 import { NavBar } from '../navBar/navBar';
 import  { PopUpInfo } from '../popUpInfo/popUpInfo';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { addFavoritePokemon, removeFavoritePokemon } from '../../reducers/actions/index';
 import { useSelector } from 'react-redux';
@@ -11,28 +11,6 @@ import { RootState } from '../../reducers/reducer/types';
 import { connect } from 'react-redux';
 import { PokemonType } from '../../App'
 import { PokemonListContent } from './PokemonListContent';
-
-
-const blink = keyframes `
-    from { background: #eee; }
-    to { background: #e74c3c; }
-`;
-
-const shake = keyframes `
-    0 { transform: translate(0, 0) rotate(0); }
-    20% { transform: translate(-10px, 0) rotate(-20deg); }
-    30% { transform: translate(10px, 0) rotate(20deg); }
-    50% { transform: translate(-10px, 0) rotate(-10deg); }
-    60% { transform: translate(10px, 0) rotate(10deg); }
-    100% { transform: translate(0, 0) rotate(0); }
-`;
-
-const fall = keyframes `
-    0% { top: -200px }
-    60% { top: 0 }
-    80% { top: -20px }
-    100% { top: 0 }
-`;
 
 const Pokedex = styled.div`
     width: 100vw;
@@ -59,12 +37,14 @@ const Footer = styled.div `
 
     @media (min-width:768px) {
         justify-content: flex-end;
+        height: 8vh;
     }
 `;
 
 const PaginationContent = styled.div`
     display: flex;
     height: 5vh;
+    width: 70vw;
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
@@ -73,15 +53,16 @@ const PaginationContent = styled.div`
     @media (min-width:768px) {
         justify-content: center;
         font-size: 100%;
+        width: 50vw;
     }
 `;
 
-const PaginationButton = styled.button<{ isactive: string }>`
+const PaginationButton = styled.button<{ $isactive: string }>`
     padding: 5px 10px;
     border: none;
-    background-color: ${({ isactive }) => (isactive === 'true' ? "#DCBF00" : "transparent")};
-    color: ${({ isactive }) => (isactive === 'true'  ? "#FFFFFF" : "#000000")};
-    font-weight: ${({ isactive }) => (isactive === 'true'  ? "bold" : "normal")};
+    background-color: ${({ $isactive }) => ($isactive === 'true' ? "#ffcb05" : "transparent")};
+    color: rgb(46, 48, 87);
+    font-weight: ${({ $isactive }) => ($isactive === 'true'  ? "bold" : "normal")};
     cursor: pointer;
 
     &:hover {
@@ -89,21 +70,27 @@ const PaginationButton = styled.button<{ isactive: string }>`
     }
 `;
 
+const PaginationSpan = styled.span `
+    color: rgb(46, 48, 87);
+    font-size: smaller;
+`;
+
 const PokemonPerPage = styled.div `
     display:flex;
     flex-direction: row;
-    width: 40%;
+    width: 30vw;
     font-size: 70%;
     align-items: center;
 
     @media (min-width:768px) {
         justify-content: center;
         font-size: 100%;
+        width: 50vw;
     }
 `;
 
-const PopUpContainer = styled.div<{open: boolean}> `
-    display: ${({ open }) => (open ? `flex` : `none`)};
+const PopUpContainer = styled.div<{$open: boolean}> `
+    display: ${({ $open }) => ($open ? `flex` : `none`)};
     width: 100vw;
     height: 100vh;
     align-items: center; 
@@ -115,70 +102,12 @@ const PopUpContainer = styled.div<{open: boolean}> `
     z-index: 10;
 `;
 
-const Loading = styled.div`
-    *, *:before, *:after {
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-    }
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-`;
-
-const Pokeball = styled.div `
-    position: relative;
-    width: 200px;
-    height: 200px;
-    background: #fff;
-    border: 10px solid #000;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: inset -10px 10px 0 10px #ccc;
-    animation:  ${fall} .25s ease-in-out,
-                ${shake} 1.25s cubic-bezier(.36,.07,.19,.97) 3;
-
-`;
-
-const PokeballBeforeAfter = styled.div`
-    position: absolute;
-`;
-
-const PokeballBefore = styled(PokeballBeforeAfter)`
-    background: red;
-    width: 100%;
-    height: 50%;
-`;
-
-const PokeballAfter = styled(PokeballBeforeAfter)`
-    top: calc(50% - 10px);
-    width: 100%;
-    height: 20px;
-    background: #000;
-`;
-
-const PokeballButton = styled.div `
-    position: absolute;
-    top: calc(50% - 30px);
-    left: calc(50% - 30px);
-    width: 60px;
-    height: 60px;
-    background: #7f8c8d;
-    border: 10px solid #fff;
-    border-radius: 50%;
-    z-index: 10;
-    box-shadow: 0 0 0 10px black;
-    animation: ${blink} .5s alternate 7;
-`;
-
 export interface Pokemon {
     name: string;
     url: string;
     image: string;
     typeNames: string[];
     gameIndex: number;
-    pokemonData: any;
     evolutionRank: number;
   }
 
@@ -210,15 +139,15 @@ export function PokemonList(typeList: PokemonListProps) {
             const pokemonDataPromises = results.map(async (pokemon) => {
                 const pokemonResponse = await axios.get(pokemon.url);
                 const { name, sprites, types, id } = pokemonResponse.data;
-                const pokemonData = pokemonResponse.data;
                 const image = sprites.front_default;
                 const typeNames = types.map((array: any) => array.type.name);
                 const gameIndex = id;
     
-                return { name, image, typeNames, gameIndex, pokemonData } as Pokemon;
+                return { name, image, typeNames, gameIndex } as Pokemon;
             });
 
             const pokemonData = await Promise.all(pokemonDataPromises);
+            localStorage.setItem('pokemonList', JSON.stringify(pokemonData));
             setPokemonList(pokemonData);
             setIsLoaded(true);
 
@@ -274,20 +203,30 @@ export function PokemonList(typeList: PokemonListProps) {
         if (currentPage > 1) {
             buttons.push(
                 // eslint-disable-next-line react/prop-types
-                <PaginationButton key="first" isactive={currentPage === 1 ? 'true' : 'false'} onClick={() => handlePageChange(1)}>
+                <PaginationButton key="first" $isactive={currentPage === 1 ? 'true' : 'false'} onClick={() => handlePageChange(1)}>
                     1
                 </PaginationButton>
             );
             if (currentPage > 2) {
-                buttons.push(
-                    <span key="prevWaiter">
-                        ...
-                    </span>
-                );
+                if (currentPage > 3) {
+                    if (currentPage > 4) {
+                        buttons.push(
+                            <PaginationSpan key="prevWaiter">
+                                {`<<`}
+                            </PaginationSpan>
+                        );
+                    }
+                    buttons.push(
+                        // eslint-disable-next-line react/prop-types
+                        <PaginationButton key="prevPrev" $isactive={'false'} onClick={() => handlePageChange(currentPage - 2)}>
+                            {`${currentPage - 2}`}
+                        </PaginationButton>
+                    );
+                }
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="prev" isactive={'false'} onClick={() => handlePageChange(currentPage - 1)}>
-                        {`<`}
+                    <PaginationButton key="prev" $isactive={'false'} onClick={() => handlePageChange(currentPage - 1)}>
+                        {`${currentPage - 1}`}
                     </PaginationButton>
                 );
             };
@@ -295,7 +234,7 @@ export function PokemonList(typeList: PokemonListProps) {
 
         buttons.push(
             // eslint-disable-next-line react/prop-types
-            <PaginationButton key="currentPage" isactive={'true'} onClick={() => {}}>
+            <PaginationButton key="currentPage" $isactive={'true'} onClick={() => {}}>
                 {currentPage}
             </PaginationButton>
         )
@@ -304,20 +243,31 @@ export function PokemonList(typeList: PokemonListProps) {
             if (currentPage < totalPages - 1) {
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="next" isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
-                        {`>`}
+                    <PaginationButton key="next" $isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
+                        {`${currentPage + 1}`}
                     </PaginationButton>
                 );
-                buttons.push(
-                    <span key="nextWaiter">
-                        ...
-                    </span>
-                );
+                if (currentPage < totalPages - 2) {
+                    buttons.push(
+                        // eslint-disable-next-line react/prop-types
+                        <PaginationButton key="nextNext" $isactive={'false'} onClick={() => handlePageChange(currentPage + 2)}>
+                            {`${currentPage + 2}`}
+                        </PaginationButton>
+                    );
+                    if (currentPage < totalPages - 3) {
+                        buttons.push(
+                            <PaginationSpan key="nextWaiter">
+                                {`>>`}
+                            </PaginationSpan>
+                        );
+                    }
+                }
+                
             }
             if (currentPage < totalPages ) {
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="last" isactive={currentPage === totalPages ? 'true' : 'false'} onClick={() => handlePageChange(totalPages)}>
+                    <PaginationButton key="last" $isactive={currentPage === totalPages ? 'true' : 'false'} onClick={() => handlePageChange(totalPages)}>
                         {totalPages}
                     </PaginationButton>
                 );
@@ -356,7 +306,13 @@ export function PokemonList(typeList: PokemonListProps) {
       
 
     useEffect(() => {
-        fetchPokemonList();
+        const storedPokemonList = localStorage.getItem('pokemonList');
+        if (storedPokemonList) {
+            setPokemonList(JSON.parse(storedPokemonList));
+            setIsLoaded(true);
+        } else {
+            fetchPokemonList();
+        }
 // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
@@ -392,11 +348,10 @@ export function PokemonList(typeList: PokemonListProps) {
             <PokemonListContent currentPokemonList={currentPokemonList} favoritePokemons={favoritePokemons} handleFavorites={handleFavorites} handleOpenPopUpInfo={handleOpenPopUpInfo}/>
             <Footer>
                 <PaginationContent className="Pagination">
-                    <p>Page:</p>
                     {renderPaginationButtons()}
                 </PaginationContent>
                 <PokemonPerPage>
-                    <label htmlFor="pokemonPerPage">Number of pokemon per page: </label>
+                    <label htmlFor="pokemonPerPage">Amount / page : </label>
                     <select
                       id="pokemonPerPage"
                       value={pokemonPerPage}
@@ -408,13 +363,11 @@ export function PokemonList(typeList: PokemonListProps) {
                     </select>
                 </PokemonPerPage>
             </Footer>
-            <PopUpContainer className="PopUpContainer" open={isPopUpInfoOpen}>
+            <PopUpContainer className="PopUpContainer" $open={isPopUpInfoOpen}>
                 <PopUpInfo selectedPokemon={selectedPokemon} isPopUpInfoOpen={isPopUpInfoOpen} onClosePopUpInfo={handleClosePopUpInfo} />
             </PopUpContainer>
             </>
-            ) : (
-                <Loading><Pokeball><PokeballBefore /><PokeballAfter /><PokeballButton /></Pokeball></Loading>
-            )}
+            ) : null}
         </Pokedex>
     );
 }

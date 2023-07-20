@@ -57,6 +57,15 @@ const EvolutionText = styled.p `
     color: rgba(46, 48, 87, 0.6);
 `;
 
+const NoEvolution = styled.div `
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 5%;
+    align-items: center;
+    justify-content: center;
+`;
 
 interface EvolutionProps {
     evolutionChain: PopUpInfoPokemon[];
@@ -68,7 +77,8 @@ export function Evolution({ evolutionChain, haveEvolution, haveNextEvolution }:E
 
     return (
         <EvolutionContainer>
-            <h3>Evolution Chain</h3>
+            {haveEvolution === true ? (
+            <>
             <EvolutionContent>
                 <h4>First Stage</h4>
                 <EvolutionFirst>
@@ -81,7 +91,7 @@ export function Evolution({ evolutionChain, haveEvolution, haveNextEvolution }:E
                         : null
                     ))}
                 </EvolutionFirst>
-                {haveEvolution === true ? <h4>Second Stage</h4> : null}
+                <h4>Second Stage</h4>
                 <EvolutionSecond>
                 {evolutionChain.map((pokemon) => (
                     pokemon.evolutionRank === 2 ?
@@ -104,6 +114,12 @@ export function Evolution({ evolutionChain, haveEvolution, haveNextEvolution }:E
                     ))}
                 </EvolutionThird>
             </EvolutionContent>
+            </>
+            ) : (
+                <NoEvolution>
+                    This Pokemon doesn't have any evolution...
+                </NoEvolution>
+            )}
         </EvolutionContainer>
     );
 };

@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { PopUpInfoPokemon } from './popUpInfo';
 
 const MoveContainer = styled.div `
     display: flex;
@@ -24,15 +23,15 @@ const MoveInfo = styled.li `
 `;
 
 interface MoveProps {
-    selectedPokemon: PopUpInfoPokemon;
+    moves: { move: { name: string; url: string }}[];
     moveDetails: Record<string, string>;
 }
 
-export function Move({ selectedPokemon, moveDetails }:MoveProps) {
+export function Move({ moves, moveDetails }:MoveProps) {
     
     return (
         <MoveContainer>
-            {selectedPokemon.pokemonData.moves.map((array: { move: { name: string; url: string } }) => (
+            {moves.map((array: { move: { name: string; url: string } }) => (
                 <MoveContent key={array.move.name}>
                     <MoveInfo>
                         <strong>{array.move.name.charAt(0).toUpperCase() + array.move.name.replace(/-/g, ' ').slice(1)}</strong>

@@ -27,10 +27,9 @@ const Card = styled.div<{ type : string[] }>`
     width: 40vw;
     height: 30vh;
     border-radius: 12px;
-    border: solid 4px;
-    border-color: #DCBF00;
     perspective: 1000px;
     margin: 10px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
     background: linear-gradient(
         to right bottom,
         ${({ type }) => (type[0] ? `var(--${type[0]})` : 'none')} 70%,
@@ -111,8 +110,9 @@ const Types = styled.div`
     width: 100%;
     height: 100%;
     align-items: center;
-    font-weight: bolder;
+    font-weight: 600;
     font-size: 50%;
+    letter-spacing : 1px;
 
     @media (min-width:768px) {
         font-size: 70%;
@@ -145,9 +145,8 @@ const Type = styled.div<{ type : string }>`
     width: 30%;
     height: 50%;
     border-radius: 12px;
-    border: solid 4px;
-    border-color: #DCBF00;
     align-items: center;
+    box-shadow: rgba(255, 255, 255, 0.35) 0px -50px 36px -28px inset;
     background-color: ${({ type }) => (type ? `var(--${type})` : 'none')};
 `;
 
@@ -158,6 +157,7 @@ const SpanType = styled.div `
     align-items: center;
     width: 100%;
     height: 100%;
+    border-radius: 12px;
     background-color: rgba(255, 255, 255, 0.1);
 `;
 
@@ -166,13 +166,13 @@ const PokemonListContainer = styled.div`
     display: flex;
     flex-wrap: wrap;
     width: 100vw;
-    height: 70vh;
+    height: 77vh;
     flex-direction: row;
     overflow-y: auto;
     justify-content: space-evenly;
 
     @media (min-width:768px) {
-        height: 80vh;
+        height: 100vh;
         width: 100vw;
         gap: 5%;
     }
@@ -198,7 +198,7 @@ const FavoriteButton = styled.button`
     background-color: transparent;
     border: none;
     font-size: 24px;
-    color: #DCBF00;
+    color: rgb(46, 48, 87);
     cursor: pointer;
     z-index: 2;
     margin-right: 5%;
@@ -213,7 +213,7 @@ const NotFavoriteButton = styled.button`
     background-color: transparent;
     border: none;
     font-size: 24px;
-    color: grey;
+    color: rgb(46, 48, 87);
     cursor: pointer;
     z-index: 2;
     margin-right: 5%;

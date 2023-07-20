@@ -33,10 +33,21 @@ const StatsText = styled.li `
     }
 `;
 
-const TypeContent = styled.div `
-    display : flex;
+
+const TypeContent = styled.div`
+    display: flex;
     flex-direction: row;
     justify-content: space-around;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    font-weight: 600;
+    font-size: 50%;
+    letter-spacing : 1px;
+
+    @media (min-width:768px) {
+        font-size: 80%;
+    }
 `;
 
 const Type = styled.div<{ type : string }>`
@@ -62,12 +73,11 @@ const Type = styled.div<{ type : string }>`
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    width: 20%;
-    height: 100%;
+    width: 25%;
+    height: 25px;
     border-radius: 12px;
-    border: solid 4px;
-    border-color: #DCBF00;
     align-items: center;
+    box-shadow: rgba(255, 255, 255, 0.35) 0px -50px 36px -28px inset;
     background-color: ${({ type }) => (type ? `var(--${type})` : 'none')};
 `;
 
@@ -78,33 +88,30 @@ const SpanType = styled.div `
     align-items: center;
     width: 100%;
     height: 100%;
+    border-radius: 12px;
     background-color: rgba(255, 255, 255, 0.1);
-    font-weight: bolder;
-    font-size: 80%;
-    
-    @media (min-width:768px) {
-        font-size: 100%;
-    }
 `;
+
 
 interface StatsProps {
     selectedPokemon: PopUpInfoPokemon;
+    stats: { base_stat: number; stat: { name: string } }[];
 }
 
-export function Stats({ selectedPokemon }:StatsProps) {
+export function Stats({ selectedPokemon, stats }:StatsProps) {
 
     return (
         <StatsContainer>
             <StatContent>
                 <StatInfo>
-                {selectedPokemon.pokemonData.stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
+                {stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
                     index < 3 ? 
                         <StatsText key={array.stat.name}><strong>{array.stat.name}:</strong> {array.base_stat}</StatsText>
                     : null
                 ))}
                 </StatInfo>
                 <StatInfo>
-                {selectedPokemon.pokemonData.stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
+                {stats.map((array: { base_stat: number; stat: { name: string } }, index:number) => (
                     index > 2 ? 
                         <StatsText key={array.stat.name}><strong>{array.stat.name}:</strong> {array.base_stat}</StatsText>
                     : null

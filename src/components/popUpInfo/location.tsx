@@ -6,6 +6,8 @@ const LocationContainer = styled.div `
     width: 90%;
     margin-left: 5%;
     margin-top: 5%;
+    align-items: center;
+    justify-content: center;
 `;
 
 const LocationContent = styled.div `
@@ -41,6 +43,8 @@ export function Location({ location, locationNumber }:LocationProps) {
     
     return (
         <LocationContainer>
+            {location.length > 0 ? (
+            <>
             <LocationContent>
                 <LocationInfo>  
                     {location.map((location, index) => (
@@ -60,7 +64,14 @@ export function Location({ location, locationNumber }:LocationProps) {
                         : null
                     ))}
                 </LocationInfo>
+                
             </LocationContent>
+            </>
+            ) : (
+                <>
+                    This Pokemon isn't located...
+                </>
+            )}
         </LocationContainer>
     );
 };

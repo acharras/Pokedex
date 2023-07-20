@@ -42,6 +42,7 @@ const Footer = styled.div `
 const PaginationContent = styled.div`
     display: flex;
     height: 5vh;
+    width: 50vw;
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
@@ -53,12 +54,12 @@ const PaginationContent = styled.div`
     }
 `;
 
-const PaginationButton = styled.button<{ isactive: string }>`
+const PaginationButton = styled.button<{ $isactive: string }>`
     padding: 5px 10px;
     border: none;
-    background-color: ${({ isactive }) => (isactive === 'true' ? "#DCBF00" : "transparent")};
-    color: ${({ isactive }) => (isactive === 'true'  ? "#FFFFFF" : "#000000")};
-    font-weight: ${({ isactive }) => (isactive === 'true'  ? "bold" : "normal")};
+    background-color: ${({ $isactive }) => ($isactive === 'true' ? "#ffcb05" : "transparent")};
+    color: rgb(46, 48, 87);
+    font-weight: ${({ $isactive }) => ($isactive === 'true'  ? "bold" : "normal")};
     cursor: pointer;
 
     &:hover {
@@ -66,10 +67,15 @@ const PaginationButton = styled.button<{ isactive: string }>`
     }
 `;
 
+const PaginationSpan = styled.span `
+    color: rgb(46, 48, 87);
+    font-size: smaller;
+`;
+
 const PokemonPerPage = styled.div `
     display:flex;
     flex-direction: row;
-    width: 40%;
+    width: 50vw;
     font-size: 70%;
     align-items: center;
 
@@ -193,20 +199,30 @@ export function FavoritePokemonList(typeList: FavoritePokemonListProps) {
         if (currentPage > 1) {
             buttons.push(
                 // eslint-disable-next-line react/prop-types
-                <PaginationButton key="first" isactive={currentPage === 1 ? 'true' : 'false'} onClick={() => handlePageChange(1)}>
+                <PaginationButton key="first" $isactive={currentPage === 1 ? 'true' : 'false'} onClick={() => handlePageChange(1)}>
                     1
                 </PaginationButton>
             );
             if (currentPage > 2) {
-                buttons.push(
-                    <span key="prevWaiter">
-                        ...
-                    </span>
-                );
+                if (currentPage > 3) {
+                    if (currentPage > 4) {
+                        buttons.push(
+                            <PaginationSpan key="prevWaiter">
+                                {`<<`}
+                            </PaginationSpan>
+                        );
+                    }
+                    buttons.push(
+                        // eslint-disable-next-line react/prop-types
+                        <PaginationButton key="prevPrev" $isactive={'false'} onClick={() => handlePageChange(currentPage - 2)}>
+                            {`${currentPage - 2}`}
+                        </PaginationButton>
+                    );
+                }
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="prev" isactive={'false'} onClick={() => handlePageChange(currentPage - 1)}>
-                        {`<`}
+                    <PaginationButton key="prev" $isactive={'false'} onClick={() => handlePageChange(currentPage - 1)}>
+                        {`${currentPage - 1}`}
                     </PaginationButton>
                 );
             };
@@ -214,7 +230,7 @@ export function FavoritePokemonList(typeList: FavoritePokemonListProps) {
 
         buttons.push(
             // eslint-disable-next-line react/prop-types
-            <PaginationButton key="currentPage" isactive={'true'} onClick={() => {}}>
+            <PaginationButton key="currentPage" $isactive={'true'} onClick={() => {}}>
                 {currentPage}
             </PaginationButton>
         )
@@ -223,20 +239,31 @@ export function FavoritePokemonList(typeList: FavoritePokemonListProps) {
             if (currentPage < totalPages - 1) {
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="next" isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
-                        {`>`}
+                    <PaginationButton key="next" $isactive={'false'} onClick={() => handlePageChange(currentPage + 1)}>
+                        {`${currentPage + 1}`}
                     </PaginationButton>
                 );
-                buttons.push(
-                    <span key="nextWaiter">
-                        ...
-                    </span>
-                );
+                if (currentPage < totalPages - 2) {
+                    buttons.push(
+                        // eslint-disable-next-line react/prop-types
+                        <PaginationButton key="nextNext" $isactive={'false'} onClick={() => handlePageChange(currentPage + 2)}>
+                            {`${currentPage + 2}`}
+                        </PaginationButton>
+                    );
+                    if (currentPage < totalPages - 3) {
+                        buttons.push(
+                            <PaginationSpan key="nextWaiter">
+                                {`>>`}
+                            </PaginationSpan>
+                        );
+                    }
+                }
+                
             }
             if (currentPage < totalPages ) {
                 buttons.push(
                     // eslint-disable-next-line react/prop-types
-                    <PaginationButton key="last" isactive={currentPage === totalPages ? 'true' : 'false'} onClick={() => handlePageChange(totalPages)}>
+                    <PaginationButton key="last" $isactive={currentPage === totalPages ? 'true' : 'false'} onClick={() => handlePageChange(totalPages)}>
                         {totalPages}
                     </PaginationButton>
                 );
@@ -305,17 +332,16 @@ export function FavoritePokemonList(typeList: FavoritePokemonListProps) {
                 filterType={filterType}
                 typeList={typeList.typeList} />
             {favoritePokemons.length === 0 ? (
-                <NoPokemonListContent>No favorite Pokémon yet.</NoPokemonListContent>
+                <NoPokemonListContent>No favourite Pokémon yet.</NoPokemonListContent>
             ) : (
                 <FavoritePokemonListContent currentFavoritePokemonList={currentFavoritePokemonList} favoritePokemons={favoritePokemons} handleFavorites={handleFavorites} handleOpenPopUpInfo={handleOpenPopUpInfo}/>
             )}
             <Footer>
                 <PaginationContent className="Pagination">
-                    <p>Page:</p>
                     {renderPaginationButtons()}
                 </PaginationContent>
                 <PokemonPerPage>
-                    <label htmlFor="pokemonPerPage">Number of pokemon per page: </label>
+                    <label htmlFor="pokemonPerPage">Amount / page: </label>
                     <select
                       id="pokemonPerPage"
                       value={pokemonPerPage}

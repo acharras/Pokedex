@@ -1,5 +1,4 @@
 import styled from 'styled-components';
-import { PopUpInfoPokemon } from './popUpInfo';
 
 const HeldItemContainer = styled.div `
     display: flex;
@@ -7,6 +6,8 @@ const HeldItemContainer = styled.div `
     width: 90%;
     margin-left: 5%;
     margin-top: 5%;
+    align-items: center;
+    justify-content: center;
 `;
 
 const HeldItemContent = styled.div `
@@ -24,20 +25,28 @@ const HeldItemInfo = styled.li `
 `;
 
 interface HeldItemProps {
-    selectedPokemon: PopUpInfoPokemon;
+    heldItems: { item: { name: string } }[];
 }
 
-export function HeldItem({ selectedPokemon }:HeldItemProps) {
+export function HeldItem({ heldItems }:HeldItemProps) {
 
     return (
         <HeldItemContainer>
-            {selectedPokemon.pokemonData.held_items.map((array: { item: { name: string } }) => (
+            {heldItems.length > 0 ? (
+            <>
+            {heldItems.map((array: { item: { name: string } }) => (
                 <HeldItemContent key={array.item.name}>
                     <HeldItemInfo>
                         {array.item.name.charAt(0).toUpperCase() + array.item.name.replace(/-/g, ' ').slice(1)}
                     </HeldItemInfo>
                 </HeldItemContent>
             ))}
+            </>
+            ) : (
+                <>
+                    This Pokemon doesn't hold any items...
+                </>
+            )}
         </HeldItemContainer>
     );
 };

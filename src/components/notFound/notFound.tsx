@@ -32,7 +32,7 @@ const NotFoundContainer = styled.div `
     align-items: center;
     height: 100vh;
     width: 100vw;
-    justify-content: center;
+    justify-content: flex-start;
 `;
 
 
@@ -59,7 +59,7 @@ const Pokeball = styled.div `
     overflow: hidden;
     box-shadow: inset -10px 10px 0 10px #ccc;
     animation:  ${fall} .25s ease-in-out,
-                ${shake} 1.25s cubic-bezier(.36,.07,.19,.97) 3;
+                ${shake} 1.25s cubic-bezier(.36,.07,.19,.97) infinite;
 
 `;
 
@@ -91,7 +91,7 @@ const PokeballButton = styled.div `
     border-radius: 50%;
     z-index: 10;
     box-shadow: 0 0 0 10px black;
-    animation: ${blink} .5s alternate 7;
+    animation: ${blink} .5s alternate infinite;
 `;
   
 
@@ -101,6 +101,8 @@ export function NotFound() {
 
     return (
         <NotFoundContainer>
+            <h1>404 page not found</h1>
+            <h4>click on the pokeball to go home</h4>
             <Loading  onClick={ () => { return history.push("/") }}><Pokeball><PokeballBefore /><PokeballAfter /><PokeballButton /></Pokeball></Loading>
         </NotFoundContainer>
     )

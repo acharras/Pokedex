@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import styled, { keyframes } from 'styled-components';
 import { PokemonType } from '../../App'
 import { useHistory } from 'react-router';
@@ -38,8 +38,7 @@ const SearchInput = styled.input `
     border-radius: 3rem;
     padding: 0.8rem 1rem;
     font-size: 1rem;
-    color: #333333;
-    width: 15rem;
+    color: rgb(46, 48, 87);
     transition: box-shadow 0.3s ease;
     box-shadow: 0 0 0 2px #ffcb05;
     margin-right: 2rem;
@@ -47,8 +46,9 @@ const SearchInput = styled.input `
     height: 1rem;
     width: 60vw;
 
-    @media (min-width:768px) {
-        max-width: 15vw;
+    @media  (min-width:768px) {
+        width: 30vw;
+        max-width: 300px;
         margin-top : 0px;
     }
 `;
@@ -57,15 +57,16 @@ const FilterHandler = styled.div `
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    margin-right: 0;
     margin-bottom: 1vh;
-    width: 80vw;
-    margin-top : 10px;
+    width: 60vw;
+    margin-right: 4rem;
+    margin-top: 10px;
 
     @media (min-width:768px) {
         align-items: center;
         margin-top : 0px;
         margin-bottom: 0px;
+        width: 30vw;
     }
 `;
 
@@ -75,7 +76,8 @@ const FilterButton = styled.button`
     border-radius: 3rem;
     padding: 0.8rem 1rem;
     font-size: 1rem;
-    color: #333333;
+    color: rgb(46, 48, 87);
+    font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
 
@@ -84,8 +86,8 @@ const FilterButton = styled.button`
     }
 `;
 
-const FilterOptions = styled.div<{ isopen: string }> `
-    display: ${({isopen}) => ( isopen === 'true' ? 'flex' : 'none')};
+const FilterOptions = styled.div<{ $isopen: string }> `
+    display: ${({$isopen}) => ( $isopen === 'true' ? 'flex' : 'none')};
     width: 50%;
     height: 35vh;
     background-color: #ffffff;
@@ -98,13 +100,15 @@ const FilterOptions = styled.div<{ isopen: string }> `
     flex-direction: column;
     align-items: center;
 
-    @media (min-width:768px) {
+    @media (min-width:1000px) {
         flex-wrap: wrap;
         justify-content: space-around;
         height: 5vh;
+        width: 80%;
         overflow-x: auto;
         overflow-y: hidden;
     }
+    
 
     &::-webkit-scrollbar {
         height: 10px;
@@ -123,13 +127,13 @@ const FilterOptions = styled.div<{ isopen: string }> `
 
 `;
 
-const FilterOption = styled.div<{ ischoiced : string }>`
+const FilterOption = styled.div<{ $ischoiced : string }>`
     height: 1.5rem;
     padding: 0.5rem;
     cursor: pointer;
     border-radius: 0.5rem;
     transition: background-color 0.3s ease;
-    background-color: ${({ischoiced}) => ( ischoiced === 'true' ? `#ffd900` : `none`)};
+    background-color: ${({$ischoiced}) => ( $ischoiced === 'true' ? `#ffd900` : `none`)};
     &:hover {
         background-color: #f4f4f4;
     }
@@ -139,17 +143,17 @@ const MenuLogo = styled.div `
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    width: 50vw;
+    width: 20vw;
 `;
 
-const Logo = styled.h1<{ispage: string}>`
+const Logo = styled.h1<{$ispage: string}>`
     font-size: 24px;
     cursor: pointer;
-    border-bottom: 3px solid ${({ispage}) => ( ispage === 'true' ? `#ffd900` : `rgba(0, 0, 0, 0.3)`)};
+    border-bottom: 3px solid ${({$ispage}) => ( $ispage === 'true' ? `#ffd900` : `rgba(0, 0, 0, 0.3)`)};
 `;
 
-const PopupContainer = styled.div<{ isOpen: boolean }>`
-    display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
+const PopupContainer = styled.div<{ $isopen: string }>`
+    display: ${({ $isopen }) => ($isopen === 'true' ? 'flex' : 'none')};
     flex-direction: column;
     position: absolute;
     align-items: flex-end;
@@ -183,18 +187,18 @@ const PopupContent = styled.div `
     }
 `;
 
-const PopupItem = styled.button<{ispage: string}>`
+const PopupItem = styled.button<{$ispage: string}>`
     background: none;
     border: none;
     font-size: 16px;
     cursor: pointer;
     padding: 5px;
     margin-top: 15%;
-    border-bottom: 3px solid ${({ispage}) => ( ispage === 'true' ? `#ffd900` : `rgba(0, 0, 0, 0.3)`)};
+    border-bottom: 3px solid ${({$ispage}) => ( $ispage === 'true' ? `#ffd900` : `rgba(0, 0, 0, 0.3)`)};
 
 `;
 
-const MenuButtonWrapper = styled.button<{isopen:boolean}>`
+const MenuButtonWrapper = styled.button<{$isopen:string}>`
     position: absolute;
     top: 20px;
     right: 20px;
@@ -229,15 +233,15 @@ const MenuButtonWrapper = styled.button<{isopen:boolean}>`
     }
 
     span:nth-child(1) {
-        transform: translateY(${({ isopen }) => (isopen ? '7px' : '0')}) rotate(${({ isopen }) => (isopen ? '45deg' : '0')});
+        transform: translateY(${({ $isopen }) => ($isopen === 'true' ? '7px' : '0')}) rotate(${({ $isopen }) => ($isopen === 'true' ? '45deg' : '0')});
     }
 
     span:nth-child(3) {
-        opacity: ${({ isopen }) => (isopen ? '0' : '1')};
+        opacity: ${({ $isopen }) => ($isopen === 'true' ? '0' : '1')};
     }
 
     span:nth-child(2) {
-        transform: translateY(${({ isopen }) => (isopen ? '-7px' : '0')}) rotate(${({ isopen }) => (isopen ? '-45deg' : '0')});
+        transform: translateY(${({ $isopen }) => ($isopen === 'true' ? '-7px' : '0')}) rotate(${({ $isopen }) => ($isopen === 'true' ? '-45deg' : '0')});
     }
 `;
 
@@ -255,7 +259,7 @@ export function NavBar({ onSearch, onFilterTypeChange, pokemonPerPage, filterTyp
     const [searchTerm, setSearchTerm] = useState('');
     const [isFilterOptionsOpen, setIsFilterOptionsOpen] = useState<boolean>(false)
     const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const isMobile = window.innerWidth <= 768;
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const location = useLocation();
 
     const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,6 +288,18 @@ export function NavBar({ onSearch, onFilterTypeChange, pokemonPerPage, filterTyp
         setIsPopupOpen(!isPopupOpen);
       };
     
+    useEffect(() => {
+        const updateIsMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        updateIsMobile();
+        window.addEventListener('resize', updateIsMobile);
+
+        return () => {
+            window.removeEventListener('resize', updateIsMobile);
+          };
+    }, )
 
     return (
         <NavBarContainer>
@@ -297,34 +313,34 @@ export function NavBar({ onSearch, onFilterTypeChange, pokemonPerPage, filterTyp
             </form>
             <FilterHandler>
                 <FilterButton onClick={handleToggleFilterOptions}>Filter</FilterButton>
-                <FilterOptions isopen={isFilterOptionsOpen ? 'true' : 'false'}>
-                    <FilterOption ischoiced={filterType === '' ? 'true' : 'false'} onClick={() => handleSelectFilterOption('')}>Tous</FilterOption>
+                <FilterOptions $isopen={isFilterOptionsOpen ? 'true' : 'false'}>
+                    <FilterOption $ischoiced={filterType === '' ? 'true' : 'false'} onClick={() => handleSelectFilterOption('')}>All</FilterOption>
                     {typeList.filter((type) => type.name !== 'unknown' && type.name !== 'shadow').map((type) => (
-                        <FilterOption key={type.name} ischoiced={type.name === filterType ? 'true' : 'false'} onClick={() => handleSelectFilterOption(type.name)}>
-                          {type.name}
+                        <FilterOption key={type.name} $ischoiced={type.name === filterType ? 'true' : 'false'} onClick={() => handleSelectFilterOption(type.name)}>
+                          {type.name.charAt(0).toUpperCase() + type.name.slice(1)}
                         </FilterOption>
                     ))}
                 </FilterOptions>
             </FilterHandler>
             {isMobile === false ? (
                 <MenuLogo>
-                    <Logo ispage={location.pathname === '/' ? 'true' : 'false'} onClick={() => {return history.push("/")}}>Pokedex</Logo>
-                    <Logo ispage={location.pathname === '/favorite' ? 'true' : 'false'} onClick={() => {return history.push("/favorite")}}>Favorite</Logo>
+                    <div><Logo $ispage={location.pathname === '/' ? 'true' : 'false'} onClick={() => {return history.push("/")}}>Pokedex</Logo></div>
+                    <div><Logo $ispage={location.pathname === '/favourite' ? 'true' : 'false'} onClick={() => {return history.push("/favourite")}}>Favourite</Logo></div>
                 </MenuLogo>
             ) : ( 
                 <>
-                    <MenuButtonWrapper isopen={isPopupOpen} onClick={handlePopupToggle}>
+                    <MenuButtonWrapper $isopen={isPopupOpen ? 'true' : 'false'} onClick={handlePopupToggle}>
                         <span />
                         <span />
                         <span />
                     </MenuButtonWrapper>
-                    <PopupContainer isOpen={isPopupOpen}>
+                    <PopupContainer $isopen={isPopupOpen ? 'true' : 'false'}>
                         <PopupContent>
-                            <PopupItem ispage={location.pathname === '/' ? 'true' : 'false'} onClick={() => {return history.push("/")}}>
+                            <PopupItem $ispage={location.pathname === '/' ? 'true' : 'false'} onClick={() => {return history.push("/")}}>
                                 Pokedex
                             </PopupItem>
-                            <PopupItem ispage={location.pathname === '/favorite' ? 'true' : 'false'} onClick={() => {return history.push("/favorite")}}>
-                                Favorite
+                            <PopupItem $ispage={location.pathname === '/favourite' ? 'true' : 'false'} onClick={() => {return history.push("/favourite")}}>
+                                Favourite
                             </PopupItem>
                         </PopupContent>
                     </PopupContainer>

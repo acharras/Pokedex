@@ -18,6 +18,33 @@ import { Ability } from './ability';
 import { Form } from './form';
 import { Evolution } from './evolution';
 
+
+const blink = keyframes `
+    from {
+        background: #eee;
+    }
+    to {
+        background: #e74c3c;
+    }
+`;
+
+const shake = keyframes `
+    0 { transform: translate(0, 0) rotate(0); }
+    20% { transform: translate(-10px, 0) rotate(-20deg); }
+    30% { transform: translate(10px, 0) rotate(20deg); }
+    50% { transform: translate(-10px, 0) rotate(-10deg); }
+    60% { transform: translate(10px, 0) rotate(10deg); }
+    100% { transform: translate(0, 0) rotate(0); }
+`;
+
+const fall = keyframes `
+    0% { top: -200px }
+    60% { top: 0 }
+    80% { top: -20px }
+    100% { top: 0 }
+`;
+
+
 const slideUp = keyframes `
     from {
         transform: translateY(100%);
@@ -37,7 +64,7 @@ const slideDown = keyframes `
 `;
 
 
-const PoPUpContainer = styled.div<{ispopupinfoopen: string}>`
+const PoPUpContainer = styled.div<{$ispopupinfoopen: string}>`
     display: flex;
     align-items: center;
     justify-content: center;
@@ -45,7 +72,7 @@ const PoPUpContainer = styled.div<{ispopupinfoopen: string}>`
     height: 100vh;
     transition: top 0.3s eas-in-out;
     
-    animation: ${({ ispopupinfoopen }) => (ispopupinfoopen === 'true' ? slideUp : slideDown)} 0.3s ease-in-out;
+    animation: ${({ $ispopupinfoopen }) => ($ispopupinfoopen === 'true' ? slideUp : slideDown)} 0.3s ease-in-out;
 `;
 
 const PoPUpContent = styled.div`
@@ -68,8 +95,8 @@ const PoPUpContent = styled.div`
 `;
 
 
-const DivContent = styled.div<{active: string}>`
-    display: ${({ active }) => (active === 'true' ? 'flex' : 'none')};
+const DivContent = styled.div<{$active: string}>`
+    display: ${({ $active }) => ($active === 'true' ? 'flex' : 'none')};
     flex-direction: column;
     height: 60%;
     width: 100%;
@@ -129,13 +156,74 @@ const CloseIcon = styled.span`
     }
 `;
 
+
+
+
+const Loading = styled.div`
+    *, *:before, *:after {
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 110px;
+    transform: translate(-50%,-50%);
+`;
+
+const Pokeball = styled.div `
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: #fff;
+    border: 10px solid #000;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: inset -10px 10px 0 10px #ccc;
+    animation:  ${fall} .25s ease-in-out,
+                ${shake} 1.25s cubic-bezier(.36,.07,.19,.97) infinite;
+
+`;
+
+const PokeballBeforeAfter = styled.div`
+    position: absolute;
+`;
+
+const PokeballBefore = styled(PokeballBeforeAfter)`
+    background: red;
+    width: 100%;
+    height: 50%;
+`;
+
+const PokeballAfter = styled(PokeballBeforeAfter)`
+    top: calc(50% - 10px);
+    width: 100%;
+    height: 20px;
+    background: #000;
+`;
+
+const PokeballButton = styled.div `
+    position: absolute;
+    top: calc(50% - 30px);
+    left: calc(50% - 30px);
+    width: 60px;
+    height: 60px;
+    background: #7f8c8d;
+    border: 10px solid #fff;
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 0 0 10px black;
+    animation: ${blink} .5s alternate infinite;
+`;
+  
+
 export interface PopUpInfoPokemon {
     name: string;
     url: string;
     image: string;
     typeNames: string[];
     gameIndex: number;
-    pokemonData: any;
     evolutionRank: number;
 }
 
@@ -164,14 +252,20 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
     const [eggGroup, setEggGroup] = useState<string[]>([]);
     const [shape, setShape] = useState<string[]>([]);
     const [generation, setGeneration] = useState<string[]>([]);
-    const [formsSwitchable, setFormsSwitchable] = useState<boolean>();
     const [genus, setGenus] = useState<string[]>([]);
+    const [heldItems, setHeldItems] = useState<{ item: { name: string } }[]>([]);
+    const [stats, setStats] = useState<{ base_stat: number; stat: { name: string } }[]>([]);
+    const [abilities, setAbilities] = useState<{ ability : { name : string; url : string }}[]>([]);
+    const [forms, setForms] = useState<{ name : string; url : string }[]>([]);
+    const [moves, setMoves] = useState<{ move: { name: string; url: string }}[]>([]);
     const [activeButton, setActiveButton] = useState('about');
     const [haveEvolution, setHaveEvolution] = useState<boolean>(false);
     const [haveNextEvolution, setHaveNextEvolution] = useState<boolean>(false);
     const [locationNumber, setLocationNumber] = useState<number>(0);
+    const [isLoaded, setIsLoaded] = useState(false);
     const dispatch = useDispatch();
     const favoritePokemons = useSelector((state: RootState) => state.favorites);
+    
 
     useEffect(() => {
         if (selectedPokemon) {
@@ -201,11 +295,15 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
                     const generation = pokemonData.generation.name.replace(/-/g, ' ').replace(/^(.*?\s)(.*)$/, (match:string, firstPart:string, secondPart:string) => {
                         return firstPart + secondPart.toUpperCase();
                       });
-                    const formsSwitchable = pokemonData.forms_switchable;
                     const genera = pokemonData.genera.filter(
                         (entry: { language: { name: string } }) => entry.language.name === 'en'
                       );
                     const genus = genera[0].genus;
+                    const heldItems = infoData.held_items;
+                    const stats = infoData.stats;
+                    const abilities = infoData.abilities;
+                    const forms = infoData.forms;
+                    const moves = infoData.moves;
 
                     setDescription(description);
                     setHeight(height);
@@ -220,107 +318,109 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
                     setEggGroup(eggGroup);
                     setShape(shape);
                     setGeneration(generation);
-                    setFormsSwitchable(formsSwitchable);
                     setGenus(genus);
+                    setHeldItems(heldItems);
+                    setStats(stats);
+                    setAbilities(abilities);
+                    setForms(forms);
+                    setMoves(moves);
+
+                    const fetchEvolution = async (pokemonData:any) => {
+                        try {
+                            const evolutionChainUrl = pokemonData.evolution_chain.url;
+                        
+                            const evolutionChainResponse = await axios.get(evolutionChainUrl);
+                            const evolutionChainData = evolutionChainResponse.data;
+                            const chain = parseEvolutionChain(evolutionChainData.chain);
+                            const evolutionChain = await fetchPokemonEvolutionChain(chain);
+                            setEvolutionChain(evolutionChain);
+                        
+                        } catch (error) {
+                            console.log(error);
+                        }
+                    }
+                    fetchEvolution(pokemonData);
+                
+                    const fetchLocation = async (infoData:any) => {
+                        try {
+                            const locationEntries = infoData.location_area_encounters;
+                            const locationResponse = await axios.get(locationEntries);
+                            const location = locationResponse.data.map((array: { location_area: { name: string } }) => array.location_area.name.charAt(0).toUpperCase() + array.location_area.name.slice(1).replace(/-/g, ' ') );
+                            setLocation(location);
+                            setLocationNumber(location.length);
+                        } catch (error) {
+                            console.log(error);
+                        }
+                    };
+                    fetchLocation(infoData);
+                
+
+                    infoData.moves.forEach((array: { move: { name: string; url: string } }) => {
+                        const fetchMoveDetails = async () => {
+                            try {
+                                const response = await axios.get(array.move.url);
+                                const moveData = response.data;
+                                const effectEntry = moveData.effect_entries.find(
+                                    (entry: { language: { name: string } }) => entry.language.name === 'en'
+                                );
+                                const effectChance = moveData.effect_chance;
+                                const effect = effectEntry ? effectEntry.effect : '';
+                                const finalEffect = effect.replace(/\$.*?%/g, `${effectChance}%`);
+                                
+                                setMoveDetails((prevMoveDetails) => ({
+                                    ...prevMoveDetails,
+                                    [array.move.name]: finalEffect
+                                }));
+
+                            } catch (error) {
+                                console.log(error);
+                            }
+                        };
+                        fetchMoveDetails();  
+                    });
+                
+                    infoData.forms.forEach((array: { name: string; url: string }) => {
+                        const fetchFormsImage = async () => {
+                            try {
+                                const response = await axios.get(array.url);
+                                const formsData = response.data;
+                                const spriteUrl = formsData.sprites.front_default;
+                                setFormsImage((prevFormDetails) => ({
+                                    ...prevFormDetails,
+                                    [array.name]: spriteUrl
+                                }));
+                            } catch (error) {
+                                console.log(error);
+                            }
+                        };
+                        fetchFormsImage();
+                    });
+                
+                    infoData.abilities.forEach((array: { ability: { name: string; url: string } }) => {
+                        const fetchAbilityDetails = async () => {
+                            try {
+                                const response = await axios.get(array.ability.url);
+                                const abilitiesData = response.data;
+                                const effectEntry = abilitiesData.effect_entries.find(
+                                    (entry: { language: { name: string } }) => entry.language.name === 'en'
+                                );
+                                const effect = effectEntry ? effectEntry.effect : '';
+                                setAbilityDetails((prevAbilityDetails) => ({
+                                    ...prevAbilityDetails,
+                                    [array.ability.name]: effect
+                                }));
+                            } catch (error) {
+                                console.log(error);
+                            }
+                        };
+                        fetchAbilityDetails(); 
+                    });
                 } catch (error) {
                     console.log(error);
                 }
             };
             fetchPokemonData();
-            
-            const fetchEvolution = async () => {
-                try {
-                    const response = await axios.get(apiUrl + `pokemon-species/${selectedPokemon.gameIndex}`);
-                    const speciesData = response.data;
-                    const evolutionChainUrl = speciesData.evolution_chain.url;
-
-                    const evolutionChainResponse = await axios.get(evolutionChainUrl);
-                    const evolutionChainData = evolutionChainResponse.data;
-                    const chain = parseEvolutionChain(evolutionChainData.chain);
-                    const evolutionChain = await fetchPokemonEvolutionChain(chain);
-                    setEvolutionChain(evolutionChain);
-
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-            fetchEvolution();
-        
-            const fetchLocation = async () => {
-                try {
-                    const response = await axios.get(apiUrl + `pokemon/${selectedPokemon.gameIndex}`);
-                    const pokemonData = response.data;
-                    const locationEntries = pokemonData.location_area_encounters;
-                    const locationResponse = await axios.get(locationEntries);
-                    const location = locationResponse.data.map((array: { location_area: { name: string } }) => array.location_area.name.charAt(0).toUpperCase() + array.location_area.name.slice(1).replace(/-/g, ' ') );
-                    setLocation(location);
-                    setLocationNumber(location.length);
-                } catch (error) {
-                    console.log(error);
-                }
-            };
-            fetchLocation();
-
-            selectedPokemon.pokemonData.moves.forEach((array: { move: { name: string; url: string } }) => {
-                const fetchMoveDetails = async () => {
-                    try {
-                        const response = await axios.get(array.move.url);
-                        const moveData = response.data;
-                        const effectEntry = moveData.effect_entries.find(
-                            (entry: { language: { name: string } }) => entry.language.name === 'en'
-                        );
-                        const effectChance = moveData.effect_chance;
-                        const effect = effectEntry ? effectEntry.effect : '';
-                        const finalEffect = effect.replace(/\$.*?%/g, `${effectChance}%`);
-
-                        setMoveDetails((prevMoveDetails) => ({
-                            ...prevMoveDetails,
-                            [array.move.name]: finalEffect
-                        }));
-                        
-                    } catch (error) {
-                        console.log(error);
-                    }
-                };
-                fetchMoveDetails();  
-            });
-
-            selectedPokemon.pokemonData.forms.forEach((array: { name: string; url: string }) => {
-                const fetchFormsImage = async () => {
-                    try {
-                        const response = await axios.get(array.url);
-                        const formsData = response.data;
-                        const spriteUrl = formsData.sprites.front_default;
-                        setFormsImage((prevFormDetails) => ({
-                            ...prevFormDetails,
-                            [array.name]: spriteUrl
-                        }));
-                    } catch (error) {
-                        console.log(error);
-                    }
-                };
-                fetchFormsImage();
-            });
-
-            selectedPokemon.pokemonData.abilities.forEach((array: { ability: { name: string; url: string } }) => {
-                const fetchAbilityDetails = async () => {
-                    try {
-                        const response = await axios.get(array.ability.url);
-                        const abilitiesData = response.data;
-                        const effectEntry = abilitiesData.effect_entries.find(
-                            (entry: { language: { name: string } }) => entry.language.name === 'en'
-                        );
-                        const effect = effectEntry ? effectEntry.effect : '';
-                        setAbilityDetails((prevAbilityDetails) => ({
-                            ...prevAbilityDetails,
-                            [array.ability.name]: effect
-                        }));
-                    } catch (error) {
-                        console.log(error);
-                    }
-                };
-                fetchAbilityDetails();  
-            });
+            setIsLoaded(true);
         }
     }, [selectedPokemon]);
 
@@ -356,7 +456,6 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
             image : pokemonImageUrl,
             typeNames : [],
             gameIndex : species.gameIndex,
-            pokemonData : null,
             evolutionRank : 1,
         };
         setHaveEvolution(false);
@@ -375,7 +474,6 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
                     image : evolvesToPokemonImageUrl,
                     typeNames : [],
                     gameIndex : evolvesToSpecies.gameIndex,
-                    pokemonData : null,
                     evolutionRank: 2,
                 }
                 setHaveEvolution(true);
@@ -394,7 +492,6 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
                             image : evolvesToNextPokemonImageUrl,
                             typeNames : [],
                             gameIndex : evolvesToNextSpecies.gameIndex,
-                            pokemonData : null,
                             evolutionRank: 3,
                         }
                         evolutionChain.push(evolvesToNextPokemon);
@@ -428,38 +525,44 @@ export function PopUpInfo({ selectedPokemon, isPopUpInfoOpen, onClosePopUpInfo }
 
 
     return (
-        <PoPUpContainer ispopupinfoopen={isPopUpInfoOpen ? 'true' : 'false'}>
+        <PoPUpContainer $ispopupinfoopen={isPopUpInfoOpen ? 'true' : 'false'}>
+            {isLoaded === true ? (
+                <>
             <PoPUpContent>
-                <CloseButton onClick={() => {onClosePopUpInfo(); handleButtonClick('about')}}>
+                <CloseButton onClick={() => {onClosePopUpInfo(); handleButtonClick('about');}}>
                     <CloseIcon />
                 </CloseButton>
                 <Card selectedPokemon={selectedPokemon} favoritePokemons={favoritePokemons} handleFavorites={handleFavorites}/>
-                <ButtonCard selectedPokemon={selectedPokemon} activeButton={activeButton} haveEvolution={haveEvolution} formsSwitchable={formsSwitchable} location={location} handleButtonClick={handleButtonClick}/>
-                <DivContent active={activeButton === 'about' ? 'true' : 'false'}>
+                <ButtonCard activeButton={activeButton} handleButtonClick={handleButtonClick}/>
+                <DivContent $active={activeButton === 'about' ? 'true' : 'false'}>
                     <About description={description} isBaby={isBaby} isLegendary={isLegendary} isMythical={isMythical} height={height} weight={weight} malePercentage={malePercentage} femalePercentage={femalePercentage} eggGroup={eggGroup} hatchSteps={hatchSteps} generation={generation} capturePercentage={capturePercentage} shape={shape} genus={genus}  />
                 </DivContent>
-                <DivContent active={activeButton === 'evolution' ? 'true' : 'false'}>
+                <DivContent $active={activeButton === 'evolution' ? 'true' : 'false'}>
                     <Evolution evolutionChain={evolutionChain} haveEvolution={haveEvolution} haveNextEvolution={haveNextEvolution}/>
                 </DivContent>
-                <DivContent active={activeButton === 'location' ? 'true' : 'false'}>
+                <DivContent $active={activeButton === 'location' ? 'true' : 'false'}>
                     <Location location={location} locationNumber={locationNumber}/>
                 </DivContent>
-                <DivContent active={activeButton === 'stats' ? 'true' : 'false'}>
-                    <Stats selectedPokemon={selectedPokemon} />
+                <DivContent $active={activeButton === 'stats' ? 'true' : 'false'}>
+                    <Stats selectedPokemon={selectedPokemon} stats={ stats } />
                 </DivContent>
-                <DivContent active={activeButton === 'moves' ? 'true' : 'false'}>
-                    <Move selectedPokemon={selectedPokemon} moveDetails={moveDetails}/>
+                <DivContent $active={activeButton === 'moves' ? 'true' : 'false'}>
+                    <Move moves={moves} moveDetails={moveDetails}/>
                 </DivContent>
-                <DivContent active={activeButton === 'heldItems' ? 'true' : 'false'}>
-                    <HeldItem selectedPokemon={selectedPokemon}/>
+                <DivContent $active={activeButton === 'heldItems' ? 'true' : 'false'}>
+                    <HeldItem heldItems={heldItems}/>
                 </DivContent>
-                <DivContent active={activeButton === 'forms' ? 'true' : 'false'}>
-                    <Form selectedPokemon={selectedPokemon} formsImage={formsImage} />
+                <DivContent $active={activeButton === 'forms' ? 'true' : 'false'}>
+                    <Form forms={forms} formsImage={formsImage} />
                 </DivContent>
-                <DivContent active={activeButton === 'abilities' ? 'true' : 'false'}>
-                    <Ability selectedPokemon={selectedPokemon} abilityDetails={abilityDetails} />
+                <DivContent $active={activeButton === 'abilities' ? 'true' : 'false'}>
+                    <Ability abilities={abilities} abilityDetails={abilityDetails} />
                 </DivContent>
               </PoPUpContent>
+            </>
+           ) : (
+           <Loading ><Pokeball><PokeballBefore /><PokeballAfter /><PokeballButton /></Pokeball></Loading>
+           )}
         </PoPUpContainer>
     );
 };

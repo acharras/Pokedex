@@ -86,7 +86,7 @@ const FavoriteButton = styled.button`
     background-color: transparent;
     border: none;
     font-size: 32px;
-    color: #DCBF00;
+    color: rgb(46, 48, 87);
     cursor: pointer;
     z-index: 2;
     
@@ -96,7 +96,7 @@ const NotFavoriteButton = styled.button`
     background-color: transparent;
     border: none;
     font-size: 32px;
-    color: grey;
+    color: rgb(46, 48, 87);
     cursor: pointer;
     z-index: 2;
 
